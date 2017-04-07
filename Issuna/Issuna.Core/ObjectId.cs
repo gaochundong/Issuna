@@ -7,11 +7,13 @@ using System.Threading;
 
 namespace Issuna.Core
 {
-    // ObjectId is a 12-byte, constructed using:
-    // a 4-byte value representing the seconds since the Unix epoch,
-    // a 3-byte machine identifier,
-    // a 2-byte process id, and
-    // a 3-byte counter, starting with a random value.
+    /// <summary>
+    /// ObjectId is a 12-byte, constructed using:
+    /// a 4-byte value representing the seconds since the Unix epoch,
+    /// a 3-byte machine identifier,
+    /// a 2-byte process id, and
+    /// a 3-byte counter, starting with a random value.
+    /// </summary>
     [Serializable]
     public struct ObjectId : IComparable<ObjectId>, IEquatable<ObjectId>
     {
@@ -71,7 +73,7 @@ namespace Issuna.Core
                 throw new ArgumentNullException("value");
             }
 
-            var bytes = ObjectIdUtils.ParseHexString(value);
+            var bytes = ObjectIdHexer.ParseHexString(value);
             FromByteArray(bytes, 0, out _a, out _b, out _c);
         }
 
@@ -102,37 +104,37 @@ namespace Issuna.Core
 
         public DateTime CreationTime
         {
-            get { return ObjectIdConstants.UnixEpoch.AddSeconds(Timestamp); }
+            get { return ObjectIdTimer.UnixEpoch.AddSeconds(Timestamp); }
         }
 
-        public static bool operator <(ObjectId lhs, ObjectId rhs)
+        public static bool operator <(ObjectId left, ObjectId right)
         {
-            return lhs.CompareTo(rhs) < 0;
+            return left.CompareTo(right) < 0;
         }
 
-        public static bool operator <=(ObjectId lhs, ObjectId rhs)
+        public static bool operator <=(ObjectId left, ObjectId right)
         {
-            return lhs.CompareTo(rhs) <= 0;
+            return left.CompareTo(right) <= 0;
         }
 
-        public static bool operator ==(ObjectId lhs, ObjectId rhs)
+        public static bool operator ==(ObjectId left, ObjectId right)
         {
-            return lhs.Equals(rhs);
+            return left.Equals(right);
         }
 
-        public static bool operator !=(ObjectId lhs, ObjectId rhs)
+        public static bool operator !=(ObjectId left, ObjectId right)
         {
-            return !(lhs == rhs);
+            return !(left == right);
         }
 
-        public static bool operator >=(ObjectId lhs, ObjectId rhs)
+        public static bool operator >=(ObjectId left, ObjectId right)
         {
-            return lhs.CompareTo(rhs) >= 0;
+            return left.CompareTo(right) >= 0;
         }
 
-        public static bool operator >(ObjectId lhs, ObjectId rhs)
+        public static bool operator >(ObjectId left, ObjectId right)
         {
-            return lhs.CompareTo(rhs) > 0;
+            return left.CompareTo(right) > 0;
         }
 
         public static ObjectId GenerateNewId()
@@ -220,7 +222,7 @@ namespace Issuna.Core
             if (s != null && s.Length == 24)
             {
                 byte[] bytes;
-                if (ObjectIdUtils.TryParseHexString(s, out bytes))
+                if (ObjectIdHexer.TryParseHexString(s, out bytes))
                 {
                     objectId = new ObjectId(bytes);
                     return true;
@@ -257,7 +259,7 @@ namespace Issuna.Core
 
         private static int GetTimestampFromDateTime(DateTime timestamp)
         {
-            var secondsSinceEpoch = (long)Math.Floor((ObjectIdUtils.ToUniversalTime(timestamp) - ObjectIdConstants.UnixEpoch).TotalSeconds);
+            var secondsSinceEpoch = (long)Math.Floor((ObjectIdTimer.ToUniversalTime(timestamp) - ObjectIdTimer.UnixEpoch).TotalSeconds);
             if (secondsSinceEpoch < int.MinValue || secondsSinceEpoch > int.MaxValue)
             {
                 throw new ArgumentOutOfRangeException("timestamp");
@@ -281,12 +283,12 @@ namespace Issuna.Core
             return ((uint)_c).CompareTo((uint)other._c);
         }
 
-        public bool Equals(ObjectId rhs)
+        public bool Equals(ObjectId other)
         {
             return
-                _a == rhs._a &&
-                _b == rhs._b &&
-                _c == rhs._c;
+                _a == other._a &&
+                _b == other._b &&
+                _c == other._c;
         }
 
         public override bool Equals(object obj)
@@ -344,16 +346,21 @@ namespace Issuna.Core
 
         public override string ToString()
         {
-            return ObjectIdUtils.ToHexString(ToByteArray());
+            return ObjectIdHexer.ToHexString(ToByteArray());
         }
 
-        internal static class ObjectIdConstants
+        public static implicit operator string(ObjectId objectId)
+        {
+            return objectId.ToString();
+        }
+
+        internal static class ObjectIdTimer
         {
             private static readonly long __dateTimeMaxValueMillisecondsSinceEpoch;
             private static readonly long __dateTimeMinValueMillisecondsSinceEpoch;
             private static readonly DateTime __unixEpoch;
 
-            static ObjectIdConstants()
+            static ObjectIdTimer()
             {
                 __unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
                 __dateTimeMaxValueMillisecondsSinceEpoch = (DateTime.MaxValue - __unixEpoch).Ticks / 10000;
@@ -371,9 +378,54 @@ namespace Issuna.Core
             }
 
             public static DateTime UnixEpoch { get { return __unixEpoch; } }
+
+            public static DateTime ToUniversalTime(DateTime dateTime)
+            {
+                if (dateTime == DateTime.MinValue)
+                {
+                    return DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc);
+                }
+                else if (dateTime == DateTime.MaxValue)
+                {
+                    return DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Utc);
+                }
+                else
+                {
+                    return dateTime.ToUniversalTime();
+                }
+            }
+
+            public static DateTime ToDateTimeFromMillisecondsSinceEpoch(long millisecondsSinceEpoch)
+            {
+                if (millisecondsSinceEpoch < DateTimeMinValueMillisecondsSinceEpoch ||
+                    millisecondsSinceEpoch > DateTimeMaxValueMillisecondsSinceEpoch)
+                {
+                    var message = string.Format(
+                        "The value {0} for the BsonDateTime MillisecondsSinceEpoch is outside the" +
+                        "range that can be converted to a .NET DateTime.",
+                        millisecondsSinceEpoch);
+                    throw new ArgumentOutOfRangeException("millisecondsSinceEpoch", message);
+                }
+
+                // MaxValue has to be handled specially to avoid rounding errors
+                if (millisecondsSinceEpoch == DateTimeMaxValueMillisecondsSinceEpoch)
+                {
+                    return DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Utc);
+                }
+                else
+                {
+                    return UnixEpoch.AddTicks(millisecondsSinceEpoch * 10000);
+                }
+            }
+
+            public static long ToMillisecondsSinceEpoch(DateTime dateTime)
+            {
+                var utcDateTime = ToUniversalTime(dateTime);
+                return (utcDateTime - UnixEpoch).Ticks / 10000;
+            }
         }
 
-        internal static class ObjectIdUtils
+        internal static class ObjectIdHexer
         {
             public static string ToHexString(byte[] bytes)
             {
@@ -437,67 +489,6 @@ namespace Issuna.Core
                 }
 
                 return bytes;
-            }
-
-            public static DateTime ToLocalTime(DateTime dateTime)
-            {
-                if (dateTime == DateTime.MinValue)
-                {
-                    return DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Local);
-                }
-                else if (dateTime == DateTime.MaxValue)
-                {
-                    return DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Local);
-                }
-                else
-                {
-                    return dateTime.ToLocalTime();
-                }
-            }
-
-            public static DateTime ToUniversalTime(DateTime dateTime)
-            {
-                if (dateTime == DateTime.MinValue)
-                {
-                    return DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc);
-                }
-                else if (dateTime == DateTime.MaxValue)
-                {
-                    return DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Utc);
-                }
-                else
-                {
-                    return dateTime.ToUniversalTime();
-                }
-            }
-
-            public static DateTime ToDateTimeFromMillisecondsSinceEpoch(long millisecondsSinceEpoch)
-            {
-                if (millisecondsSinceEpoch < ObjectIdConstants.DateTimeMinValueMillisecondsSinceEpoch ||
-                    millisecondsSinceEpoch > ObjectIdConstants.DateTimeMaxValueMillisecondsSinceEpoch)
-                {
-                    var message = string.Format(
-                        "The value {0} for the BsonDateTime MillisecondsSinceEpoch is outside the" +
-                        "range that can be converted to a .NET DateTime.",
-                        millisecondsSinceEpoch);
-                    throw new ArgumentOutOfRangeException("millisecondsSinceEpoch", message);
-                }
-
-                // MaxValue has to be handled specially to avoid rounding errors
-                if (millisecondsSinceEpoch == ObjectIdConstants.DateTimeMaxValueMillisecondsSinceEpoch)
-                {
-                    return DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Utc);
-                }
-                else
-                {
-                    return ObjectIdConstants.UnixEpoch.AddTicks(millisecondsSinceEpoch * 10000);
-                }
-            }
-
-            public static long ToMillisecondsSinceEpoch(DateTime dateTime)
-            {
-                var utcDateTime = ToUniversalTime(dateTime);
-                return (utcDateTime - ObjectIdConstants.UnixEpoch).Ticks / 10000;
             }
         }
     }
