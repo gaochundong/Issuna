@@ -52,9 +52,12 @@ namespace Issuna.Core
 
         public DateTime CreationTime
         {
-            get { return Precision == 0 ? 
-                    LongIdTimer.ToDateTimeFromSecondsSinceEpoch(Timestamp) 
-                    : LongIdTimer.ToDateTimeFromMillisecondsSinceEpoch(Timestamp); }
+            get
+            {
+                return Precision == 0 ?
+                  LongIdTimer.ToDateTimeFromSecondsSinceLongIdEpoch(Timestamp)
+                  : LongIdTimer.ToDateTimeFromMillisecondsSinceLongIdEpoch(Timestamp);
+            }
         }
 
         public long ToLong()
@@ -162,8 +165,8 @@ namespace Issuna.Core
         public static LongId GenerateNewId(byte reserved = 0, byte region = 0, ushort machine = 0, byte precision = 0, DateTime? timestamp = null)
         {
             long timestampLong = precision == 0 ?
-                LongIdTimer.GetSecondsSinceEpochFromDateTime(timestamp.HasValue ? timestamp.Value : DateTime.UtcNow)
-                : LongIdTimer.GetMillisecondsSinceEpochFromDateTime(timestamp.HasValue ? timestamp.Value : DateTime.UtcNow);
+                LongIdTimer.GetSecondsSinceLongIdEpochFromDateTime(timestamp.HasValue ? timestamp.Value : DateTime.UtcNow)
+                : LongIdTimer.GetMillisecondsSinceLongIdEpochFromDateTime(timestamp.HasValue ? timestamp.Value : DateTime.UtcNow);
 
             int increment = Interlocked.Increment(ref __staticSequence);
             int sequence = precision == 0 ? (increment & 0x0fffff) : (increment & 0x03ff);
@@ -201,6 +204,12 @@ namespace Issuna.Core
         public override string ToString()
         {
             return ((long)this).ToString();
+        }
+
+        public string ToText()
+        {
+            return string.Format("Reserved[{0}], Region[{1}], Machine[{2}], Precision[{3}], Timestamp[{4}], Sequence[{5}]",
+                Reserved, Region, Machine, Precision, Timestamp, Sequence);
         }
 
         public static explicit operator long(LongId longId)
@@ -251,6 +260,9 @@ namespace Issuna.Core
             private static readonly long __dateTimeMaxValueMillisecondsSinceEpoch;
             private static readonly long __dateTimeMinValueMillisecondsSinceEpoch;
 
+            private static readonly DateTime __longIdEpoch;
+            private static readonly long __longIdEpochOffsetBySeconds; // 1483228800
+
             static LongIdTimer()
             {
                 __unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -258,6 +270,9 @@ namespace Issuna.Core
                 __dateTimeMinValueSecondsSinceEpoch = (DateTime.MinValue - __unixEpoch).Ticks / 10000 / 1000;
                 __dateTimeMaxValueMillisecondsSinceEpoch = (DateTime.MaxValue - __unixEpoch).Ticks / 10000;
                 __dateTimeMinValueMillisecondsSinceEpoch = (DateTime.MinValue - __unixEpoch).Ticks / 10000;
+
+                __longIdEpoch = new DateTime(2017, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+                __longIdEpochOffsetBySeconds = (__longIdEpoch - __unixEpoch).Ticks / 10000 / 1000;
             }
 
             public static long DateTimeMaxValueSecondsSinceEpoch
@@ -281,6 +296,10 @@ namespace Issuna.Core
             }
 
             public static DateTime UnixEpoch { get { return __unixEpoch; } }
+
+            public static DateTime LongIdEpoch { get { return __longIdEpoch; } }
+
+            public static long LongIdEpochOffsetBySeconds { get { return __longIdEpochOffsetBySeconds; } }
 
             public static DateTime ToUniversalTime(DateTime dateTime)
             {
@@ -334,9 +353,9 @@ namespace Issuna.Core
                 }
             }
 
-            public static long GetSecondsSinceEpochFromDateTime(DateTime timestamp)
+            public static long GetSecondsSinceEpochFromDateTime(DateTime dateTime)
             {
-                var secondsSinceEpoch = (long)Math.Floor((ToUniversalTime(timestamp) - UnixEpoch).TotalSeconds);
+                var secondsSinceEpoch = (long)Math.Floor((ToUniversalTime(dateTime) - UnixEpoch).TotalSeconds);
                 if (secondsSinceEpoch < long.MinValue || secondsSinceEpoch > long.MaxValue)
                 {
                     throw new ArgumentOutOfRangeException("timestamp");
@@ -344,14 +363,34 @@ namespace Issuna.Core
                 return secondsSinceEpoch;
             }
 
-            public static long GetMillisecondsSinceEpochFromDateTime(DateTime timestamp)
+            public static long GetMillisecondsSinceEpochFromDateTime(DateTime dateTime)
             {
-                var millisecondsSinceEpoch = (long)Math.Floor((ToUniversalTime(timestamp) - UnixEpoch).TotalMilliseconds);
+                var millisecondsSinceEpoch = (long)Math.Floor((ToUniversalTime(dateTime) - UnixEpoch).TotalMilliseconds);
                 if (millisecondsSinceEpoch < long.MinValue || millisecondsSinceEpoch > long.MaxValue)
                 {
                     throw new ArgumentOutOfRangeException("timestamp");
                 }
                 return millisecondsSinceEpoch;
+            }
+
+            public static DateTime ToDateTimeFromSecondsSinceLongIdEpoch(long secondsSinceLongIdEpoch)
+            {
+                return ToDateTimeFromSecondsSinceEpoch(LongIdEpochOffsetBySeconds + secondsSinceLongIdEpoch);
+            }
+
+            public static DateTime ToDateTimeFromMillisecondsSinceLongIdEpoch(long millisecondsSinceLongIdEpoch)
+            {
+                return ToDateTimeFromMillisecondsSinceEpoch((LongIdEpochOffsetBySeconds * 1000) + millisecondsSinceLongIdEpoch);
+            }
+
+            public static long GetSecondsSinceLongIdEpochFromDateTime(DateTime dateTime)
+            {
+                return GetSecondsSinceEpochFromDateTime(dateTime) - LongIdEpochOffsetBySeconds;
+            }
+
+            public static long GetMillisecondsSinceLongIdEpochFromDateTime(DateTime dateTime)
+            {
+                return GetMillisecondsSinceEpochFromDateTime(dateTime) - (LongIdEpochOffsetBySeconds * 1000);
             }
         }
     }
