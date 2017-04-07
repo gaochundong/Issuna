@@ -8,14 +8,14 @@ using System.Threading;
 namespace Issuna.Core
 {
     /// <summary>
-    /// ObjectId is a 12-byte, constructed using:
+    /// ObjectId is a 12-byte Id consists of:
     /// a 4-byte value representing the seconds since the Unix epoch,
     /// a 3-byte machine identifier,
     /// a 2-byte process id, and
     /// a 3-byte counter, starting with a random value.
     /// </summary>
     [Serializable]
-    public struct ObjectId : IComparable<ObjectId>, IEquatable<ObjectId>
+    public struct ObjectId : IComparable<ObjectId>, IEquatable<ObjectId>, IConvertible
     {
         private static ObjectId __emptyInstance = default(ObjectId);
         private static int __staticMachine = (GetMachineHash() + AppDomain.CurrentDomain.Id) & 0x00ffffff;
@@ -349,10 +349,106 @@ namespace Issuna.Core
             return ObjectIdHexer.ToHexString(ToByteArray());
         }
 
-        public static implicit operator string(ObjectId objectId)
+        #region IConvertible Members
+
+        public TypeCode GetTypeCode()
         {
-            return objectId.ToString();
+            return TypeCode.Object;
         }
+
+        public bool ToBoolean(IFormatProvider provider)
+        {
+            throw new InvalidCastException();
+        }
+
+        public char ToChar(IFormatProvider provider)
+        {
+            throw new InvalidCastException();
+        }
+
+        public sbyte ToSByte(IFormatProvider provider)
+        {
+            throw new InvalidCastException();
+        }
+
+        public byte ToByte(IFormatProvider provider)
+        {
+            throw new InvalidCastException();
+        }
+
+        public short ToInt16(IFormatProvider provider)
+        {
+            throw new InvalidCastException();
+        }
+
+        public ushort ToUInt16(IFormatProvider provider)
+        {
+            throw new InvalidCastException();
+        }
+
+        public int ToInt32(IFormatProvider provider)
+        {
+            throw new InvalidCastException();
+        }
+
+        public uint ToUInt32(IFormatProvider provider)
+        {
+            throw new InvalidCastException();
+        }
+
+        public long ToInt64(IFormatProvider provider)
+        {
+            throw new InvalidCastException();
+        }
+
+        public ulong ToUInt64(IFormatProvider provider)
+        {
+            throw new InvalidCastException();
+        }
+
+        public float ToSingle(IFormatProvider provider)
+        {
+            throw new InvalidCastException();
+        }
+
+        public double ToDouble(IFormatProvider provider)
+        {
+            throw new InvalidCastException();
+        }
+
+        public decimal ToDecimal(IFormatProvider provider)
+        {
+            throw new InvalidCastException();
+        }
+
+        public DateTime ToDateTime(IFormatProvider provider)
+        {
+            throw new InvalidCastException();
+        }
+
+        public string ToString(IFormatProvider provider)
+        {
+            return ToString();
+        }
+
+        public object ToType(Type conversionType, IFormatProvider provider)
+        {
+            switch (Type.GetTypeCode(conversionType))
+            {
+                case TypeCode.String:
+                    return ((IConvertible)this).ToString(provider);
+                case TypeCode.Object:
+                    if (conversionType == typeof(object) || conversionType == typeof(ObjectId))
+                    {
+                        return this;
+                    }
+                    break;
+            }
+
+            throw new InvalidCastException();
+        }
+
+        #endregion
 
         internal static class ObjectIdTimer
         {
