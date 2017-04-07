@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Issuna.Core
 {
@@ -19,7 +15,7 @@ namespace Issuna.Core
     /// 9-0-bit as Q-bits, sequence if the P-bit is millisecond(1), 10 bits covers 1024/millisecond.
     /// </summary>
     [Serializable]
-    public struct LongId
+    public struct LongId : IComparable<LongId>, IEquatable<LongId>
     {
         private static int __staticSequence = (new Random()).Next();
 
@@ -59,6 +55,11 @@ namespace Issuna.Core
             get { return Precision == 0 ? LongIdTimer.UnixEpoch.AddSeconds(Timestamp) : LongIdTimer.UnixEpoch.AddMilliseconds(Timestamp); }
         }
 
+        public long ToLong()
+        {
+            return Pack(Reserved, Region, Machine, Precision, Timestamp, Sequence);
+        }
+
         public static long Pack(byte reserved, byte region, ushort machine, byte precision, long timestamp, int sequence)
         {
             SanityCheck(reserved, region, machine, precision, timestamp, sequence);
@@ -75,14 +76,14 @@ namespace Issuna.Core
             return id;
         }
 
-        public static void Unpack(long id, out byte reserved, out byte region, out ushort machine, out byte precision, out long timestamp, out int sequence)
+        public static void Unpack(long longId, out byte reserved, out byte region, out ushort machine, out byte precision, out long timestamp, out int sequence)
         {
-            reserved = (byte)((id >> 63) & 0x01);
-            region = (byte)((id >> 61) & 0x03);
-            machine = (ushort)((id >> 51) & 0x03ff);
-            precision = (byte)((id >> 50) & 0x01);
-            timestamp = (long)((id >> (precision == 0 ? 20 : 10)) & (precision == 0 ? 0x3fffffff : 0xffffffffff));
-            sequence = (int)(id & (precision == 0 ? 0x0fffff : 0x03ff));
+            reserved = (byte)((longId >> 63) & 0x01);
+            region = (byte)((longId >> 61) & 0x03);
+            machine = (ushort)((longId >> 51) & 0x03ff);
+            precision = (byte)((longId >> 50) & 0x01);
+            timestamp = (long)((longId >> (precision == 0 ? 20 : 10)) & (precision == 0 ? 0x3fffffff : 0xffffffffff));
+            sequence = (int)(longId & (precision == 0 ? 0x0fffff : 0x03ff));
         }
 
         public static LongId Parse(string value)
@@ -156,13 +157,88 @@ namespace Issuna.Core
             }
         }
 
-        public static LongId GenerateNewId(byte reserved = 0, byte region = 0, ushort machine = 0, byte precision = 0)
+        public static LongId GenerateNewId(byte reserved = 0, byte region = 0, ushort machine = 0, byte precision = 0, DateTime? timestamp = null)
         {
-            long timestamp = precision == 0 ?
-                LongIdTimer.GetSecondsSinceEpochFromDateTime(DateTime.UtcNow)
-                : LongIdTimer.GetMillisecondsSinceEpochFromDateTime(DateTime.UtcNow);
-            int sequence = Interlocked.Increment(ref __staticSequence);
-            return new LongId(reserved, region, machine, precision, timestamp, sequence);
+            long timestampLong = precision == 0 ?
+                LongIdTimer.GetSecondsSinceEpochFromDateTime(timestamp.HasValue ? timestamp.Value : DateTime.UtcNow)
+                : LongIdTimer.GetMillisecondsSinceEpochFromDateTime(timestamp.HasValue ? timestamp.Value : DateTime.UtcNow);
+
+            int increment = Interlocked.Increment(ref __staticSequence);
+            int sequence = precision == 0 ? (increment & 0x0fffff) : (increment & 0x03ff);
+
+            return new LongId(reserved, region, machine, precision, timestampLong, sequence);
+        }
+
+        public static explicit operator long(LongId longId)
+        {
+            return longId.ToLong();
+        }
+
+        public static explicit operator string(LongId longId)
+        {
+            return longId.ToString();
+        }
+
+        public static bool operator <(LongId left, LongId right)
+        {
+            return left.CompareTo(right) < 0;
+        }
+
+        public static bool operator <=(LongId left, LongId right)
+        {
+            return left.CompareTo(right) <= 0;
+        }
+
+        public static bool operator ==(LongId left, LongId right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(LongId left, LongId right)
+        {
+            return !(left == right);
+        }
+
+        public static bool operator >=(LongId left, LongId right)
+        {
+            return left.CompareTo(right) >= 0;
+        }
+
+        public static bool operator >(LongId left, LongId right)
+        {
+            return left.CompareTo(right) > 0;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is LongId)
+            {
+                return Equals((LongId)obj);
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public override int GetHashCode()
+        {
+            return ((long)this).GetHashCode();
+        }
+
+        public override string ToString()
+        {
+            return ((long)this).ToString();
+        }
+
+        public int CompareTo(LongId other)
+        {
+            return ((long)this).CompareTo((long)other);
+        }
+
+        public bool Equals(LongId other)
+        {
+            return ((long)this).Equals((long)other);
         }
 
         internal static class LongIdTimer
