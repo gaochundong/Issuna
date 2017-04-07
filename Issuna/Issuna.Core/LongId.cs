@@ -52,7 +52,9 @@ namespace Issuna.Core
 
         public DateTime CreationTime
         {
-            get { return Precision == 0 ? LongIdTimer.UnixEpoch.AddSeconds(Timestamp) : LongIdTimer.UnixEpoch.AddMilliseconds(Timestamp); }
+            get { return Precision == 0 ? 
+                    LongIdTimer.ToDateTimeFromSecondsSinceEpoch(Timestamp) 
+                    : LongIdTimer.ToDateTimeFromMillisecondsSinceEpoch(Timestamp); }
         }
 
         public long ToLong()
