@@ -15,7 +15,7 @@ namespace Issuna.Core
     /// a 3-byte counter, starting with a random value.
     /// </summary>
     [Serializable]
-    public struct ObjectId : IComparable<ObjectId>, IEquatable<ObjectId>, IConvertible
+    public struct ObjectId : IComparable<ObjectId>, IEquatable<ObjectId>
     {
         private static ObjectId __emptyInstance = default(ObjectId);
         private static int __staticMachine = (GetMachineHash() + AppDomain.CurrentDomain.Id) & 0x00ffffff;
@@ -46,7 +46,7 @@ namespace Issuna.Core
         }
 
         public ObjectId(DateTime timestamp, int machine, short pid, int increment)
-            : this(GetTimestampFromDateTime(timestamp), machine, pid, increment)
+            : this(ObjectIdTimer.GetTimestampFromDateTime(timestamp), machine, pid, increment)
         {
         }
 
@@ -139,12 +139,12 @@ namespace Issuna.Core
 
         public static ObjectId GenerateNewId()
         {
-            return GenerateNewId(GetTimestampFromDateTime(DateTime.UtcNow));
+            return GenerateNewId(ObjectIdTimer.GetTimestampFromDateTime(DateTime.UtcNow));
         }
 
         public static ObjectId GenerateNewId(DateTime timestamp)
         {
-            return GenerateNewId(GetTimestampFromDateTime(timestamp));
+            return GenerateNewId(ObjectIdTimer.GetTimestampFromDateTime(timestamp));
         }
 
         public static ObjectId GenerateNewId(int timestamp)
@@ -257,16 +257,6 @@ namespace Issuna.Core
             }
         }
 
-        private static int GetTimestampFromDateTime(DateTime timestamp)
-        {
-            var secondsSinceEpoch = (long)Math.Floor((ObjectIdTimer.ToUniversalTime(timestamp) - ObjectIdTimer.UnixEpoch).TotalSeconds);
-            if (secondsSinceEpoch < int.MinValue || secondsSinceEpoch > int.MaxValue)
-            {
-                throw new ArgumentOutOfRangeException("timestamp");
-            }
-            return (int)secondsSinceEpoch;
-        }
-
         private static void FromByteArray(byte[] bytes, int offset, out int a, out int b, out int c)
         {
             a = (bytes[offset] << 24) | (bytes[offset + 1] << 16) | (bytes[offset + 2] << 8) | bytes[offset + 3];
@@ -349,112 +339,11 @@ namespace Issuna.Core
             return ObjectIdHexer.ToHexString(ToByteArray());
         }
 
-        #region IConvertible Members
-
-        public TypeCode GetTypeCode()
-        {
-            return TypeCode.Object;
-        }
-
-        public bool ToBoolean(IFormatProvider provider)
-        {
-            throw new InvalidCastException();
-        }
-
-        public char ToChar(IFormatProvider provider)
-        {
-            throw new InvalidCastException();
-        }
-
-        public sbyte ToSByte(IFormatProvider provider)
-        {
-            throw new InvalidCastException();
-        }
-
-        public byte ToByte(IFormatProvider provider)
-        {
-            throw new InvalidCastException();
-        }
-
-        public short ToInt16(IFormatProvider provider)
-        {
-            throw new InvalidCastException();
-        }
-
-        public ushort ToUInt16(IFormatProvider provider)
-        {
-            throw new InvalidCastException();
-        }
-
-        public int ToInt32(IFormatProvider provider)
-        {
-            throw new InvalidCastException();
-        }
-
-        public uint ToUInt32(IFormatProvider provider)
-        {
-            throw new InvalidCastException();
-        }
-
-        public long ToInt64(IFormatProvider provider)
-        {
-            throw new InvalidCastException();
-        }
-
-        public ulong ToUInt64(IFormatProvider provider)
-        {
-            throw new InvalidCastException();
-        }
-
-        public float ToSingle(IFormatProvider provider)
-        {
-            throw new InvalidCastException();
-        }
-
-        public double ToDouble(IFormatProvider provider)
-        {
-            throw new InvalidCastException();
-        }
-
-        public decimal ToDecimal(IFormatProvider provider)
-        {
-            throw new InvalidCastException();
-        }
-
-        public DateTime ToDateTime(IFormatProvider provider)
-        {
-            throw new InvalidCastException();
-        }
-
-        public string ToString(IFormatProvider provider)
-        {
-            return ToString();
-        }
-
-        public object ToType(Type conversionType, IFormatProvider provider)
-        {
-            switch (Type.GetTypeCode(conversionType))
-            {
-                case TypeCode.String:
-                    return ((IConvertible)this).ToString(provider);
-                case TypeCode.Object:
-                    if (conversionType == typeof(object) || conversionType == typeof(ObjectId))
-                    {
-                        return this;
-                    }
-                    break;
-            }
-
-            throw new InvalidCastException();
-        }
-
-        #endregion
-
         internal static class ObjectIdTimer
         {
+            private static readonly DateTime __unixEpoch;
             private static readonly long __dateTimeMaxValueMillisecondsSinceEpoch;
             private static readonly long __dateTimeMinValueMillisecondsSinceEpoch;
-            private static readonly DateTime __unixEpoch;
 
             static ObjectIdTimer()
             {
@@ -491,33 +380,14 @@ namespace Issuna.Core
                 }
             }
 
-            public static DateTime ToDateTimeFromMillisecondsSinceEpoch(long millisecondsSinceEpoch)
+            public static int GetTimestampFromDateTime(DateTime timestamp)
             {
-                if (millisecondsSinceEpoch < DateTimeMinValueMillisecondsSinceEpoch ||
-                    millisecondsSinceEpoch > DateTimeMaxValueMillisecondsSinceEpoch)
+                var secondsSinceEpoch = (long)Math.Floor((ToUniversalTime(timestamp) - UnixEpoch).TotalSeconds);
+                if (secondsSinceEpoch < int.MinValue || secondsSinceEpoch > int.MaxValue)
                 {
-                    var message = string.Format(
-                        "The value {0} for the BsonDateTime MillisecondsSinceEpoch is outside the" +
-                        "range that can be converted to a .NET DateTime.",
-                        millisecondsSinceEpoch);
-                    throw new ArgumentOutOfRangeException("millisecondsSinceEpoch", message);
+                    throw new ArgumentOutOfRangeException("timestamp");
                 }
-
-                // MaxValue has to be handled specially to avoid rounding errors
-                if (millisecondsSinceEpoch == DateTimeMaxValueMillisecondsSinceEpoch)
-                {
-                    return DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Utc);
-                }
-                else
-                {
-                    return UnixEpoch.AddTicks(millisecondsSinceEpoch * 10000);
-                }
-            }
-
-            public static long ToMillisecondsSinceEpoch(DateTime dateTime)
-            {
-                var utcDateTime = ToUniversalTime(dateTime);
-                return (utcDateTime - UnixEpoch).Ticks / 10000;
+                return (int)secondsSinceEpoch;
             }
         }
 
