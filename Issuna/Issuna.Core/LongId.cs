@@ -169,6 +169,38 @@ namespace Issuna.Core
             return new LongId(reserved, region, machine, precision, timestampLong, sequence);
         }
 
+        public int CompareTo(LongId other)
+        {
+            return ((long)this).CompareTo((long)other);
+        }
+
+        public bool Equals(LongId other)
+        {
+            return ((long)this).Equals((long)other);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is LongId)
+            {
+                return Equals((LongId)obj);
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public override int GetHashCode()
+        {
+            return ((long)this).GetHashCode();
+        }
+
+        public override string ToString()
+        {
+            return ((long)this).ToString();
+        }
+
         public static explicit operator long(LongId longId)
         {
             return longId.ToLong();
@@ -207,38 +239,6 @@ namespace Issuna.Core
         public static bool operator >(LongId left, LongId right)
         {
             return left.CompareTo(right) > 0;
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (obj is LongId)
-            {
-                return Equals((LongId)obj);
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        public override int GetHashCode()
-        {
-            return ((long)this).GetHashCode();
-        }
-
-        public override string ToString()
-        {
-            return ((long)this).ToString();
-        }
-
-        public int CompareTo(LongId other)
-        {
-            return ((long)this).CompareTo((long)other);
-        }
-
-        public bool Equals(LongId other)
-        {
-            return ((long)this).Equals((long)other);
         }
 
         internal static class LongIdTimer
