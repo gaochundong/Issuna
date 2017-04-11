@@ -7,21 +7,25 @@ namespace Issuna.Core
     /// </summary>
     public class SnowflakeId
     {
-        private static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        public static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         public const long TwitterEpoch = 1288834974657L;
 
-        const int WorkerIdBits = 5;
-        const int DataCenterIdBits = 5;
-        const int SequenceBits = 12;
+        public const int TimestampBits = 41;
+        public const int DataCenterIdBits = 5;
+        public const int WorkerIdBits = 5;
+        public const int SequenceBits = 12;
 
-        const long MaxWorkerId = -1L ^ (-1L << WorkerIdBits);
-        const long MaxDataCenterId = -1L ^ (-1L << DataCenterIdBits);
+        public const long MaxDataCenterId = -1L ^ (-1L << DataCenterIdBits);
+        public const long MaxWorkerId = -1L ^ (-1L << WorkerIdBits);
 
-        const int WorkerIdShift = SequenceBits;
-        const int DataCenterIdShift = SequenceBits + WorkerIdBits;
-        const int TimestampLeftShift = SequenceBits + WorkerIdBits + DataCenterIdBits;
+        public const int WorkerIdShift = SequenceBits;
+        public const int DataCenterIdShift = SequenceBits + WorkerIdBits;
+        public const int TimestampLeftShift = SequenceBits + WorkerIdBits + DataCenterIdBits;
 
-        const long SequenceMask = -1L ^ (-1L << SequenceBits);
+        public const long TimestampMask = -1L ^ (-1L << TimestampBits);
+        public const long DataCenterIdMask = -1L ^ (-1L << DataCenterIdBits);
+        public const long WorkerIdMask = -1L ^ (-1L << WorkerIdBits);
+        public const long SequenceMask = -1L ^ (-1L << SequenceBits);
 
         private long _sequence = 0L;
         private long _lastTimestamp = -1L;
@@ -96,6 +100,14 @@ namespace Issuna.Core
         private long NextTimestamp()
         {
             return (long)((DateTime.UtcNow - UnixEpoch).Ticks / 10000);
+        }
+
+        public static void Unpack(long snowflake, out long timestamp, out long dataCenterId, out long workerId, out long sequence)
+        {
+            timestamp = (long)((snowflake >> TimestampLeftShift) & TimestampMask);
+            dataCenterId = (long)((snowflake >> DataCenterIdShift) & DataCenterIdMask);
+            workerId = (long)((snowflake >> WorkerIdShift) & WorkerIdMask);
+            sequence = (long)(snowflake & SequenceMask);
         }
     }
 }

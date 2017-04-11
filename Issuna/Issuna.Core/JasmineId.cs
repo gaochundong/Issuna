@@ -110,6 +110,11 @@ namespace Issuna.Core
             }
         }
 
+        public static JasmineId Parse(long value)
+        {
+            return new JasmineId(value);
+        }
+
         public static bool TryParse(string value, out JasmineId jasmineId)
         {
             if (!string.IsNullOrEmpty(value))
@@ -124,6 +129,20 @@ namespace Issuna.Core
 
             jasmineId = default(JasmineId);
             return false;
+        }
+
+        public static bool TryParse(long value, out JasmineId jasmineId)
+        {
+            try
+            {
+                jasmineId = new JasmineId(value);
+                return true;
+            }
+            catch
+            {
+                jasmineId = default(JasmineId);
+                return false;
+            }
         }
 
         private static void SanityCheck(byte reserved, byte region, ushort machine, byte precision, long timestamp, int sequence)
