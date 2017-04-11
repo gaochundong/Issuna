@@ -55,8 +55,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="LongIdTests.cs" />
-    <Compile Include="ObjectIdTests.cs" />
+    <Compile Include="JasmineIdTests.cs" />
+    <Compile Include="MongoIdTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

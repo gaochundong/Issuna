@@ -4,7 +4,7 @@ using System.Threading;
 namespace Issuna.Core
 {
     /// <summary>
-    /// LongId is a 64-bit(long/int64) ID consists of:
+    /// JasmineId is a 64-bit(long/int64) ID consists of:
     /// 63-bit as V-bit, reserved 1 bit, 0 by default.
     /// 62-61-bit as R-bit, represents deployment region, 2 bits covers 4 regions.
     /// 60-51-bit as M-bits, represents machine identifier, 10 bits covers 1024 servers.
@@ -15,7 +15,7 @@ namespace Issuna.Core
     /// 9-0-bit as Q-bits, sequence if the P-bit is millisecond(1), 10 bits covers 1024/millisecond.
     /// </summary>
     [Serializable]
-    public struct LongId : IComparable<LongId>, IEquatable<LongId>
+    public struct JasmineId : IComparable<JasmineId>, IEquatable<JasmineId>
     {
         private static int __staticSequence = (new Random()).Next();
 
@@ -26,12 +26,12 @@ namespace Issuna.Core
         private long _timestamp;
         private int _sequence;
 
-        public LongId(long id)
+        public JasmineId(long id)
         {
             Unpack(id, out _reserved, out _region, out _machine, out _precision, out _timestamp, out _sequence);
         }
 
-        public LongId(byte reserved, byte region, ushort machine, byte precision, long timestamp, int sequence)
+        public JasmineId(byte reserved, byte region, ushort machine, byte precision, long timestamp, int sequence)
         {
             SanityCheck(reserved, region, machine, precision, timestamp, sequence);
 
@@ -81,27 +81,27 @@ namespace Issuna.Core
             return id;
         }
 
-        public static void Unpack(long longId, out byte reserved, out byte region, out ushort machine, out byte precision, out long timestamp, out int sequence)
+        public static void Unpack(long jasmineId, out byte reserved, out byte region, out ushort machine, out byte precision, out long timestamp, out int sequence)
         {
-            reserved = (byte)((longId >> 63) & 0x01);
-            region = (byte)((longId >> 61) & 0x03);
-            machine = (ushort)((longId >> 51) & 0x03ff);
-            precision = (byte)((longId >> 50) & 0x01);
-            timestamp = (long)((longId >> (precision == 0 ? 20 : 10)) & (precision == 0 ? 0x3fffffff : 0xffffffffff));
-            sequence = (int)(longId & (precision == 0 ? 0x0fffff : 0x03ff));
+            reserved = (byte)((jasmineId >> 63) & 0x01);
+            region = (byte)((jasmineId >> 61) & 0x03);
+            machine = (ushort)((jasmineId >> 51) & 0x03ff);
+            precision = (byte)((jasmineId >> 50) & 0x01);
+            timestamp = (long)((jasmineId >> (precision == 0 ? 20 : 10)) & (precision == 0 ? 0x3fffffff : 0xffffffffff));
+            sequence = (int)(jasmineId & (precision == 0 ? 0x0fffff : 0x03ff));
         }
 
-        public static LongId Parse(string value)
+        public static JasmineId Parse(string value)
         {
             if (value == null)
             {
                 throw new ArgumentNullException("value");
             }
 
-            LongId longId;
-            if (TryParse(value, out longId))
+            JasmineId jasmineId;
+            if (TryParse(value, out jasmineId))
             {
-                return longId;
+                return jasmineId;
             }
             else
             {
@@ -110,19 +110,19 @@ namespace Issuna.Core
             }
         }
 
-        public static bool TryParse(string value, out LongId longId)
+        public static bool TryParse(string value, out JasmineId jasmineId)
         {
             if (!string.IsNullOrEmpty(value))
             {
                 long id;
                 if (long.TryParse(value, out id))
                 {
-                    longId = new LongId(id);
+                    jasmineId = new JasmineId(id);
                     return true;
                 }
             }
 
-            longId = default(LongId);
+            jasmineId = default(JasmineId);
             return false;
         }
 
@@ -162,33 +162,42 @@ namespace Issuna.Core
             }
         }
 
-        public static LongId GenerateNewId(byte reserved = 0, byte region = 0, ushort machine = 0, byte precision = 0, DateTime? timestamp = null)
+        public static JasmineId GenerateNewId(byte reserved = 0, byte region = 0, ushort machine = 0, byte precision = 0, DateTime? timestamp = null)
         {
             long timestampLong = precision == 0 ?
                 LongIdTimer.GetSecondsSinceLongIdEpochFromDateTime(timestamp.HasValue ? timestamp.Value : DateTime.UtcNow)
                 : LongIdTimer.GetMillisecondsSinceLongIdEpochFromDateTime(timestamp.HasValue ? timestamp.Value : DateTime.UtcNow);
 
+            return GenerateNewId(reserved, region, machine, precision, timestamp: timestampLong);
+        }
+
+        public static JasmineId GenerateNewId(byte reserved = 0, byte region = 0, ushort machine = 0, byte precision = 0, long? timestamp = null)
+        {
+            long timestampLong = precision == 0 ?
+                timestamp.HasValue ? timestamp.Value : LongIdTimer.GetSecondsSinceLongIdEpochFromDateTime(DateTime.UtcNow)
+                : timestamp.HasValue ? timestamp.Value : LongIdTimer.GetMillisecondsSinceLongIdEpochFromDateTime(DateTime.UtcNow);
+
             int increment = Interlocked.Increment(ref __staticSequence);
             int sequence = precision == 0 ? (increment & 0x0fffff) : (increment & 0x03ff);
 
-            return new LongId(reserved, region, machine, precision, timestampLong, sequence);
+            return new JasmineId(reserved, region, machine, precision, timestampLong, sequence);
         }
 
-        public int CompareTo(LongId other)
+        public int CompareTo(JasmineId other)
         {
             return ((long)this).CompareTo((long)other);
         }
 
-        public bool Equals(LongId other)
+        public bool Equals(JasmineId other)
         {
             return ((long)this).Equals((long)other);
         }
 
         public override bool Equals(object obj)
         {
-            if (obj is LongId)
+            if (obj is JasmineId)
             {
-                return Equals((LongId)obj);
+                return Equals((JasmineId)obj);
             }
             else
             {
@@ -212,42 +221,42 @@ namespace Issuna.Core
                 Reserved, Region, Machine, Precision, Timestamp, Sequence);
         }
 
-        public static explicit operator long(LongId longId)
+        public static explicit operator long(JasmineId jasmineId)
         {
-            return longId.ToLong();
+            return jasmineId.ToLong();
         }
 
-        public static explicit operator string(LongId longId)
+        public static explicit operator string(JasmineId jasmineId)
         {
-            return longId.ToString();
+            return jasmineId.ToString();
         }
 
-        public static bool operator <(LongId left, LongId right)
+        public static bool operator <(JasmineId left, JasmineId right)
         {
             return left.CompareTo(right) < 0;
         }
 
-        public static bool operator <=(LongId left, LongId right)
+        public static bool operator <=(JasmineId left, JasmineId right)
         {
             return left.CompareTo(right) <= 0;
         }
 
-        public static bool operator ==(LongId left, LongId right)
+        public static bool operator ==(JasmineId left, JasmineId right)
         {
             return left.Equals(right);
         }
 
-        public static bool operator !=(LongId left, LongId right)
+        public static bool operator !=(JasmineId left, JasmineId right)
         {
             return !(left == right);
         }
 
-        public static bool operator >=(LongId left, LongId right)
+        public static bool operator >=(JasmineId left, JasmineId right)
         {
             return left.CompareTo(right) >= 0;
         }
 
-        public static bool operator >(LongId left, LongId right)
+        public static bool operator >(JasmineId left, JasmineId right)
         {
             return left.CompareTo(right) > 0;
         }
@@ -260,8 +269,8 @@ namespace Issuna.Core
             private static readonly long __dateTimeMaxValueMillisecondsSinceEpoch;
             private static readonly long __dateTimeMinValueMillisecondsSinceEpoch;
 
-            private static readonly DateTime __longIdEpoch;
-            private static readonly long __longIdEpochOffsetBySeconds; // 1483228800
+            private static readonly DateTime __jasmineIdEpoch;
+            private static readonly long __jasmineIdEpochOffsetBySeconds; // 1483228800
 
             static LongIdTimer()
             {
@@ -271,8 +280,8 @@ namespace Issuna.Core
                 __dateTimeMaxValueMillisecondsSinceEpoch = (DateTime.MaxValue - __unixEpoch).Ticks / 10000;
                 __dateTimeMinValueMillisecondsSinceEpoch = (DateTime.MinValue - __unixEpoch).Ticks / 10000;
 
-                __longIdEpoch = new DateTime(2017, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-                __longIdEpochOffsetBySeconds = (__longIdEpoch - __unixEpoch).Ticks / 10000 / 1000;
+                __jasmineIdEpoch = new DateTime(2017, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+                __jasmineIdEpochOffsetBySeconds = (__jasmineIdEpoch - __unixEpoch).Ticks / 10000 / 1000;
             }
 
             public static long DateTimeMaxValueSecondsSinceEpoch
@@ -297,9 +306,9 @@ namespace Issuna.Core
 
             public static DateTime UnixEpoch { get { return __unixEpoch; } }
 
-            public static DateTime LongIdEpoch { get { return __longIdEpoch; } }
+            public static DateTime LongIdEpoch { get { return __jasmineIdEpoch; } }
 
-            public static long LongIdEpochOffsetBySeconds { get { return __longIdEpochOffsetBySeconds; } }
+            public static long LongIdEpochOffsetBySeconds { get { return __jasmineIdEpochOffsetBySeconds; } }
 
             public static DateTime ToUniversalTime(DateTime dateTime)
             {

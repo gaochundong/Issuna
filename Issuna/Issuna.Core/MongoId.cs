@@ -8,16 +8,16 @@ using System.Threading;
 namespace Issuna.Core
 {
     /// <summary>
-    /// ObjectId is a 12-byte Id consists of:
+    /// MongoId is a 12-byte Id consists of:
     /// a 4-byte value representing the seconds since the Unix epoch,
     /// a 3-byte machine identifier,
     /// a 2-byte process id, and
     /// a 3-byte counter, starting with a random value.
     /// </summary>
     [Serializable]
-    public struct ObjectId : IComparable<ObjectId>, IEquatable<ObjectId>
+    public struct MongoId : IComparable<MongoId>, IEquatable<MongoId>
     {
-        private static ObjectId __emptyInstance = default(ObjectId);
+        private static MongoId __emptyInstance = default(MongoId);
         private static int __staticMachine = (GetMachineHash() + AppDomain.CurrentDomain.Id) & 0x00ffffff;
         private static short __staticPid = GetPid();
         private static int __staticIncrement = (new Random()).Next();
@@ -26,7 +26,7 @@ namespace Issuna.Core
         private int _b;
         private int _c;
 
-        public ObjectId(byte[] bytes)
+        public MongoId(byte[] bytes)
         {
             if (bytes == null)
             {
@@ -40,17 +40,17 @@ namespace Issuna.Core
             FromByteArray(bytes, 0, out _a, out _b, out _c);
         }
 
-        public ObjectId(byte[] bytes, int offset)
+        public MongoId(byte[] bytes, int offset)
         {
             FromByteArray(bytes, offset, out _a, out _b, out _c);
         }
 
-        public ObjectId(DateTime timestamp, int machine, short pid, int increment)
+        public MongoId(DateTime timestamp, int machine, short pid, int increment)
             : this(ObjectIdTimer.GetTimestampFromDateTime(timestamp), machine, pid, increment)
         {
         }
 
-        public ObjectId(int timestamp, int machine, short pid, int increment)
+        public MongoId(int timestamp, int machine, short pid, int increment)
         {
             if ((machine & 0xff000000) != 0)
             {
@@ -66,7 +66,7 @@ namespace Issuna.Core
             _c = ((int)pid << 24) | increment;
         }
 
-        public ObjectId(string value)
+        public MongoId(string value)
         {
             if (value == null)
             {
@@ -77,7 +77,7 @@ namespace Issuna.Core
             FromByteArray(bytes, 0, out _a, out _b, out _c);
         }
 
-        public static ObjectId Empty
+        public static MongoId Empty
         {
             get { return __emptyInstance; }
         }
@@ -107,50 +107,50 @@ namespace Issuna.Core
             get { return ObjectIdTimer.UnixEpoch.AddSeconds(Timestamp); }
         }
 
-        public static bool operator <(ObjectId left, ObjectId right)
+        public static bool operator <(MongoId left, MongoId right)
         {
             return left.CompareTo(right) < 0;
         }
 
-        public static bool operator <=(ObjectId left, ObjectId right)
+        public static bool operator <=(MongoId left, MongoId right)
         {
             return left.CompareTo(right) <= 0;
         }
 
-        public static bool operator ==(ObjectId left, ObjectId right)
+        public static bool operator ==(MongoId left, MongoId right)
         {
             return left.Equals(right);
         }
 
-        public static bool operator !=(ObjectId left, ObjectId right)
+        public static bool operator !=(MongoId left, MongoId right)
         {
             return !(left == right);
         }
 
-        public static bool operator >=(ObjectId left, ObjectId right)
+        public static bool operator >=(MongoId left, MongoId right)
         {
             return left.CompareTo(right) >= 0;
         }
 
-        public static bool operator >(ObjectId left, ObjectId right)
+        public static bool operator >(MongoId left, MongoId right)
         {
             return left.CompareTo(right) > 0;
         }
 
-        public static ObjectId GenerateNewId()
+        public static MongoId GenerateNewId()
         {
             return GenerateNewId(ObjectIdTimer.GetTimestampFromDateTime(DateTime.UtcNow));
         }
 
-        public static ObjectId GenerateNewId(DateTime timestamp)
+        public static MongoId GenerateNewId(DateTime timestamp)
         {
             return GenerateNewId(ObjectIdTimer.GetTimestampFromDateTime(timestamp));
         }
 
-        public static ObjectId GenerateNewId(int timestamp)
+        public static MongoId GenerateNewId(int timestamp)
         {
             int increment = Interlocked.Increment(ref __staticIncrement) & 0x00ffffff; // only use low order 3 bytes
-            return new ObjectId(timestamp, __staticMachine, __staticPid, increment);
+            return new MongoId(timestamp, __staticMachine, __staticPid, increment);
         }
 
         public static byte[] Pack(int timestamp, int machine, short pid, int increment)
@@ -197,14 +197,14 @@ namespace Issuna.Core
             increment = (bytes[9] << 16) + (bytes[10] << 8) + bytes[11];
         }
 
-        public static ObjectId Parse(string s)
+        public static MongoId Parse(string s)
         {
             if (s == null)
             {
                 throw new ArgumentNullException("s");
             }
 
-            ObjectId objectId;
+            MongoId objectId;
             if (TryParse(s, out objectId))
             {
                 return objectId;
@@ -216,7 +216,7 @@ namespace Issuna.Core
             }
         }
 
-        public static bool TryParse(string s, out ObjectId objectId)
+        public static bool TryParse(string s, out MongoId objectId)
         {
             // don't throw ArgumentNullException if s is null
             if (s != null && s.Length == 24)
@@ -224,12 +224,12 @@ namespace Issuna.Core
                 byte[] bytes;
                 if (ObjectIdHexer.TryParseHexString(s, out bytes))
                 {
-                    objectId = new ObjectId(bytes);
+                    objectId = new MongoId(bytes);
                     return true;
                 }
             }
 
-            objectId = default(ObjectId);
+            objectId = default(MongoId);
             return false;
         }
 
@@ -264,7 +264,7 @@ namespace Issuna.Core
             c = (bytes[offset + 8] << 24) | (bytes[offset + 9] << 16) | (bytes[offset + 10] << 8) | bytes[offset + 11];
         }
 
-        public int CompareTo(ObjectId other)
+        public int CompareTo(MongoId other)
         {
             int result = ((uint)_a).CompareTo((uint)other._a);
             if (result != 0) { return result; }
@@ -273,7 +273,7 @@ namespace Issuna.Core
             return ((uint)_c).CompareTo((uint)other._c);
         }
 
-        public bool Equals(ObjectId other)
+        public bool Equals(MongoId other)
         {
             return
                 _a == other._a &&
@@ -283,9 +283,9 @@ namespace Issuna.Core
 
         public override bool Equals(object obj)
         {
-            if (obj is ObjectId)
+            if (obj is MongoId)
             {
-                return Equals((ObjectId)obj);
+                return Equals((MongoId)obj);
             }
             else
             {
