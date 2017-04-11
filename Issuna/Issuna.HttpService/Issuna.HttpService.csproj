@@ -62,6 +62,7 @@
     <Compile Include="..\SolutionVersion.cs">
       <Link>SolutionVersion.cs</Link>
     </Compile>
+    <Compile Include="Modules\PeonyIdModule.cs" />
     <Compile Include="Modules\SnowflakeIdModule.cs" />
     <Compile Include="Modules\MongoIdModule.cs" />
     <Compile Include="Modules\JasmineIdModule.cs" />

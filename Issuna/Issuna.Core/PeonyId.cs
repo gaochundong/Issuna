@@ -4,21 +4,21 @@ using System.Threading;
 namespace Issuna.Core
 {
     /// <summary>
-    /// JasmineId is a 64-bit(long/int64) ID consists of:
+    /// PeonyId is a 64-bit(long/int64) ID consists of:
     /// 1-bit as reserved, 0 by default.
-    /// 30-bit represents timestamp with seconds, 30 bits with seconds covers more than 30 years.
+    /// 40-bit represents timestamp with milliseconds, 40 bits with milliseconds covers more than 30 years.
     /// 3-bit represents deployment region, 3 bits covers 7 regions.
     /// 10-bit represents machine identifier, 10 bits covers 1024 servers.
-    /// 20-bit represents sequence, 20 bits covers 1048576/second.
+    /// 10-bit represents sequence, 10 bits covers 1024/millisecond.
     /// </summary>
     [Serializable]
-    public struct JasmineId : IComparable<JasmineId>, IEquatable<JasmineId>
+    public struct PeonyId : IComparable<PeonyId>, IEquatable<PeonyId>
     {
         public const int ReservedBits = 1;   // 1 bit reserved, 0 by default
-        public const int TimestampBits = 30; // 30 bits with seconds covers more than 30 years
+        public const int TimestampBits = 40; // 40 bits with milliseconds covers more than 30 years
         public const int RegionBits = 3;     // 3 bits covers 7 regions
         public const int MachineBits = 10;   // 10 bits covers 1024 servers
-        public const int SequenceBits = 20;  // 20 bits covers 1048576/second
+        public const int SequenceBits = 10;  // 10 bits covers 1024/millisecond
 
         public const int SequenceShift = 0;
         public const int MachineShift = SequenceShift + SequenceBits;
@@ -46,12 +46,12 @@ namespace Issuna.Core
         private long _timestamp;
         private int _sequence;
 
-        public JasmineId(long id)
+        public PeonyId(long id)
         {
             Unpack(id, out _reserved, out _timestamp, out _region, out _machine, out _sequence);
         }
 
-        public JasmineId(byte reserved, long timestamp, byte region, ushort machine, int sequence)
+        public PeonyId(byte reserved, long timestamp, byte region, ushort machine, int sequence)
         {
             SanityCheck(reserved, timestamp, region, machine, sequence);
 
@@ -67,7 +67,7 @@ namespace Issuna.Core
         public byte Region { get { return _region; } }
         public ushort Machine { get { return _machine; } }
         public int Sequence { get { return _sequence; } }
-        public DateTime CreationTime { get { return JasmineIdTimer.ToDateTimeFromSecondsSinceJasmineIdEpoch(Timestamp); } }
+        public DateTime CreationTime { get { return PeonyIdTimer.ToDateTimeFromMillisecondsSincePeonyIdEpoch(Timestamp); } }
 
         public long ToLong()
         {
@@ -89,65 +89,65 @@ namespace Issuna.Core
             return id;
         }
 
-        public static void Unpack(long jasmineId, out byte reserved, out long timestamp, out byte region, out ushort machine, out int sequence)
+        public static void Unpack(long peonyId, out byte reserved, out long timestamp, out byte region, out ushort machine, out int sequence)
         {
-            reserved = (byte)((jasmineId >> ReservedShift) & ReservedMask);
-            timestamp = (long)((jasmineId >> TimestampShift) & TimestampMask);
-            region = (byte)((jasmineId >> RegionShift) & RegionMask);
-            machine = (ushort)((jasmineId >> MachineShift) & MachineMask);
-            sequence = (int)((jasmineId >> SequenceShift) & SequenceMask);
+            reserved = (byte)((peonyId >> ReservedShift) & ReservedMask);
+            timestamp = (long)((peonyId >> TimestampShift) & TimestampMask);
+            region = (byte)((peonyId >> RegionShift) & RegionMask);
+            machine = (ushort)((peonyId >> MachineShift) & MachineMask);
+            sequence = (int)((peonyId >> SequenceShift) & SequenceMask);
         }
 
-        public static JasmineId Parse(string value)
+        public static PeonyId Parse(string value)
         {
             if (value == null)
             {
                 throw new ArgumentNullException("value");
             }
 
-            JasmineId jasmineId;
-            if (TryParse(value, out jasmineId))
+            PeonyId peonyId;
+            if (TryParse(value, out peonyId))
             {
-                return jasmineId;
+                return peonyId;
             }
             else
             {
-                var message = string.Format("'{0}' is not a valid JasmineId string.", value);
+                var message = string.Format("'{0}' is not a valid PeonyId string.", value);
                 throw new FormatException(message);
             }
         }
 
-        public static JasmineId Parse(long value)
+        public static PeonyId Parse(long value)
         {
-            return new JasmineId(value);
+            return new PeonyId(value);
         }
 
-        public static bool TryParse(string value, out JasmineId jasmineId)
+        public static bool TryParse(string value, out PeonyId peonyId)
         {
             if (!string.IsNullOrEmpty(value))
             {
                 long id;
                 if (long.TryParse(value, out id))
                 {
-                    jasmineId = new JasmineId(id);
+                    peonyId = new PeonyId(id);
                     return true;
                 }
             }
 
-            jasmineId = default(JasmineId);
+            peonyId = default(PeonyId);
             return false;
         }
 
-        public static bool TryParse(long value, out JasmineId jasmineId)
+        public static bool TryParse(long value, out PeonyId peonyId)
         {
             try
             {
-                jasmineId = new JasmineId(value);
+                peonyId = new PeonyId(value);
                 return true;
             }
             catch
             {
-                jasmineId = default(JasmineId);
+                peonyId = default(PeonyId);
                 return false;
             }
         }
@@ -186,16 +186,16 @@ namespace Issuna.Core
             }
         }
 
-        public static JasmineId GenerateNewId(byte reserved = 0, DateTime? timestamp = null, byte region = 0, ushort machine = 0, int? sequence = null)
+        public static PeonyId GenerateNewId(byte reserved = 0, DateTime? timestamp = null, byte region = 0, ushort machine = 0, int? sequence = null)
         {
-            long timestampLong = JasmineIdTimer.GetSecondsSinceJasmineIdEpochFromDateTime(timestamp.HasValue ? timestamp.Value : DateTime.UtcNow);
+            long timestampLong = PeonyIdTimer.GetMillisecondsSincePeonyIdEpochFromDateTime(timestamp.HasValue ? timestamp.Value : DateTime.UtcNow);
 
             return GenerateNewId(reserved: reserved, timestamp: timestampLong, region: region, machine: machine, sequence: sequence);
         }
 
-        public static JasmineId GenerateNewId(byte reserved = 0, long? timestamp = null, byte region = 0, ushort machine = 0, int? sequence = null)
+        public static PeonyId GenerateNewId(byte reserved = 0, long? timestamp = null, byte region = 0, ushort machine = 0, int? sequence = null)
         {
-            long timestampLong = timestamp.HasValue ? timestamp.Value : JasmineIdTimer.GetSecondsSinceJasmineIdEpochFromDateTime(DateTime.UtcNow);
+            long timestampLong = timestamp.HasValue ? timestamp.Value : PeonyIdTimer.GetMillisecondsSincePeonyIdEpochFromDateTime(DateTime.UtcNow);
 
             int sequenceInt = -1;
             if (sequence.HasValue)
@@ -208,24 +208,24 @@ namespace Issuna.Core
                 sequenceInt = increment & SequenceMask;
             }
 
-            return new JasmineId(reserved, timestampLong, region, machine, sequenceInt);
+            return new PeonyId(reserved, timestampLong, region, machine, sequenceInt);
         }
 
-        public int CompareTo(JasmineId other)
+        public int CompareTo(PeonyId other)
         {
             return ((long)this).CompareTo((long)other);
         }
 
-        public bool Equals(JasmineId other)
+        public bool Equals(PeonyId other)
         {
             return ((long)this).Equals((long)other);
         }
 
         public override bool Equals(object obj)
         {
-            if (obj is JasmineId)
+            if (obj is PeonyId)
             {
-                return Equals((JasmineId)obj);
+                return Equals((PeonyId)obj);
             }
             else
             {
@@ -249,47 +249,47 @@ namespace Issuna.Core
                 Reserved, Timestamp, Region, Machine, Sequence);
         }
 
-        public static explicit operator long(JasmineId jasmineId)
+        public static explicit operator long(PeonyId peonyId)
         {
-            return jasmineId.ToLong();
+            return peonyId.ToLong();
         }
 
-        public static explicit operator string(JasmineId jasmineId)
+        public static explicit operator string(PeonyId peonyId)
         {
-            return jasmineId.ToString();
+            return peonyId.ToString();
         }
 
-        public static bool operator <(JasmineId left, JasmineId right)
+        public static bool operator <(PeonyId left, PeonyId right)
         {
             return left.CompareTo(right) < 0;
         }
 
-        public static bool operator <=(JasmineId left, JasmineId right)
+        public static bool operator <=(PeonyId left, PeonyId right)
         {
             return left.CompareTo(right) <= 0;
         }
 
-        public static bool operator ==(JasmineId left, JasmineId right)
+        public static bool operator ==(PeonyId left, PeonyId right)
         {
             return left.Equals(right);
         }
 
-        public static bool operator !=(JasmineId left, JasmineId right)
+        public static bool operator !=(PeonyId left, PeonyId right)
         {
             return !(left == right);
         }
 
-        public static bool operator >=(JasmineId left, JasmineId right)
+        public static bool operator >=(PeonyId left, PeonyId right)
         {
             return left.CompareTo(right) >= 0;
         }
 
-        public static bool operator >(JasmineId left, JasmineId right)
+        public static bool operator >(PeonyId left, PeonyId right)
         {
             return left.CompareTo(right) > 0;
         }
 
-        internal static class JasmineIdTimer
+        internal static class PeonyIdTimer
         {
             private static readonly DateTime __unixEpoch;
             private static readonly long __dateTimeMaxValueSecondsSinceEpoch;
@@ -297,10 +297,10 @@ namespace Issuna.Core
             private static readonly long __dateTimeMaxValueMillisecondsSinceEpoch;
             private static readonly long __dateTimeMinValueMillisecondsSinceEpoch;
 
-            private static readonly DateTime __jasmineIdEpoch;
-            private static readonly long __jasmineIdEpochOffsetBySeconds; // 1483228800
+            private static readonly DateTime __peonyIdEpoch;
+            private static readonly long __peonyIdEpochOffsetBySeconds; // 1483228800
 
-            static JasmineIdTimer()
+            static PeonyIdTimer()
             {
                 __unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
                 __dateTimeMaxValueSecondsSinceEpoch = (DateTime.MaxValue - __unixEpoch).Ticks / 10000 / 1000;
@@ -308,8 +308,8 @@ namespace Issuna.Core
                 __dateTimeMaxValueMillisecondsSinceEpoch = (DateTime.MaxValue - __unixEpoch).Ticks / 10000;
                 __dateTimeMinValueMillisecondsSinceEpoch = (DateTime.MinValue - __unixEpoch).Ticks / 10000;
 
-                __jasmineIdEpoch = new DateTime(2017, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-                __jasmineIdEpochOffsetBySeconds = (__jasmineIdEpoch - __unixEpoch).Ticks / 10000 / 1000;
+                __peonyIdEpoch = new DateTime(2017, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+                __peonyIdEpochOffsetBySeconds = (__peonyIdEpoch - __unixEpoch).Ticks / 10000 / 1000;
             }
 
             public static long DateTimeMaxValueSecondsSinceEpoch
@@ -334,9 +334,9 @@ namespace Issuna.Core
 
             public static DateTime UnixEpoch { get { return __unixEpoch; } }
 
-            public static DateTime JasmineIdEpoch { get { return __jasmineIdEpoch; } }
+            public static DateTime PeonyIdEpoch { get { return __peonyIdEpoch; } }
 
-            public static long JasmineIdEpochOffsetBySeconds { get { return __jasmineIdEpochOffsetBySeconds; } }
+            public static long PeonyIdEpochOffsetBySeconds { get { return __peonyIdEpochOffsetBySeconds; } }
 
             public static DateTime ToUniversalTime(DateTime dateTime)
             {
@@ -410,24 +410,24 @@ namespace Issuna.Core
                 return millisecondsSinceEpoch;
             }
 
-            public static DateTime ToDateTimeFromSecondsSinceJasmineIdEpoch(long secondsSinceJasmineIdEpoch)
+            public static DateTime ToDateTimeFromSecondsSincePeonyIdEpoch(long secondsSincePeonyIdEpoch)
             {
-                return ToDateTimeFromSecondsSinceEpoch(JasmineIdEpochOffsetBySeconds + secondsSinceJasmineIdEpoch);
+                return ToDateTimeFromSecondsSinceEpoch(PeonyIdEpochOffsetBySeconds + secondsSincePeonyIdEpoch);
             }
 
-            public static DateTime ToDateTimeFromMillisecondsSinceJasmineIdEpoch(long millisecondsSinceJasmineIdEpoch)
+            public static DateTime ToDateTimeFromMillisecondsSincePeonyIdEpoch(long millisecondsSincePeonyIdEpoch)
             {
-                return ToDateTimeFromMillisecondsSinceEpoch((JasmineIdEpochOffsetBySeconds * 1000) + millisecondsSinceJasmineIdEpoch);
+                return ToDateTimeFromMillisecondsSinceEpoch((PeonyIdEpochOffsetBySeconds * 1000) + millisecondsSincePeonyIdEpoch);
             }
 
-            public static long GetSecondsSinceJasmineIdEpochFromDateTime(DateTime dateTime)
+            public static long GetSecondsSincePeonyIdEpochFromDateTime(DateTime dateTime)
             {
-                return GetSecondsSinceEpochFromDateTime(dateTime) - JasmineIdEpochOffsetBySeconds;
+                return GetSecondsSinceEpochFromDateTime(dateTime) - PeonyIdEpochOffsetBySeconds;
             }
 
-            public static long GetMillisecondsSinceJasmineIdEpochFromDateTime(DateTime dateTime)
+            public static long GetMillisecondsSincePeonyIdEpochFromDateTime(DateTime dateTime)
             {
-                return GetMillisecondsSinceEpochFromDateTime(dateTime) - (JasmineIdEpochOffsetBySeconds * 1000);
+                return GetMillisecondsSinceEpochFromDateTime(dateTime) - (PeonyIdEpochOffsetBySeconds * 1000);
             }
         }
     }
