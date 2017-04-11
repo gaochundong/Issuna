@@ -55,8 +55,8 @@ namespace Issuna.Core
             get
             {
                 return Precision == 0 ?
-                  LongIdTimer.ToDateTimeFromSecondsSinceLongIdEpoch(Timestamp)
-                  : LongIdTimer.ToDateTimeFromMillisecondsSinceLongIdEpoch(Timestamp);
+                  JasmineIdTimer.ToDateTimeFromSecondsSinceJasmineIdEpoch(Timestamp)
+                  : JasmineIdTimer.ToDateTimeFromMillisecondsSinceJasmineIdEpoch(Timestamp);
             }
         }
 
@@ -105,7 +105,7 @@ namespace Issuna.Core
             }
             else
             {
-                var message = string.Format("'{0}' is not a valid LongId string.", value);
+                var message = string.Format("'{0}' is not a valid JasmineId string.", value);
                 throw new FormatException(message);
             }
         }
@@ -165,8 +165,8 @@ namespace Issuna.Core
         public static JasmineId GenerateNewId(byte reserved = 0, byte region = 0, ushort machine = 0, byte precision = 0, DateTime? timestamp = null)
         {
             long timestampLong = precision == 0 ?
-                LongIdTimer.GetSecondsSinceLongIdEpochFromDateTime(timestamp.HasValue ? timestamp.Value : DateTime.UtcNow)
-                : LongIdTimer.GetMillisecondsSinceLongIdEpochFromDateTime(timestamp.HasValue ? timestamp.Value : DateTime.UtcNow);
+                JasmineIdTimer.GetSecondsSinceJasmineIdEpochFromDateTime(timestamp.HasValue ? timestamp.Value : DateTime.UtcNow)
+                : JasmineIdTimer.GetMillisecondsSinceJasmineIdEpochFromDateTime(timestamp.HasValue ? timestamp.Value : DateTime.UtcNow);
 
             return GenerateNewId(reserved, region, machine, precision, timestamp: timestampLong);
         }
@@ -174,8 +174,8 @@ namespace Issuna.Core
         public static JasmineId GenerateNewId(byte reserved = 0, byte region = 0, ushort machine = 0, byte precision = 0, long? timestamp = null)
         {
             long timestampLong = precision == 0 ?
-                timestamp.HasValue ? timestamp.Value : LongIdTimer.GetSecondsSinceLongIdEpochFromDateTime(DateTime.UtcNow)
-                : timestamp.HasValue ? timestamp.Value : LongIdTimer.GetMillisecondsSinceLongIdEpochFromDateTime(DateTime.UtcNow);
+                timestamp.HasValue ? timestamp.Value : JasmineIdTimer.GetSecondsSinceJasmineIdEpochFromDateTime(DateTime.UtcNow)
+                : timestamp.HasValue ? timestamp.Value : JasmineIdTimer.GetMillisecondsSinceJasmineIdEpochFromDateTime(DateTime.UtcNow);
 
             int increment = Interlocked.Increment(ref __staticSequence);
             int sequence = precision == 0 ? (increment & 0x0fffff) : (increment & 0x03ff);
@@ -261,7 +261,7 @@ namespace Issuna.Core
             return left.CompareTo(right) > 0;
         }
 
-        internal static class LongIdTimer
+        internal static class JasmineIdTimer
         {
             private static readonly DateTime __unixEpoch;
             private static readonly long __dateTimeMaxValueSecondsSinceEpoch;
@@ -272,7 +272,7 @@ namespace Issuna.Core
             private static readonly DateTime __jasmineIdEpoch;
             private static readonly long __jasmineIdEpochOffsetBySeconds; // 1483228800
 
-            static LongIdTimer()
+            static JasmineIdTimer()
             {
                 __unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
                 __dateTimeMaxValueSecondsSinceEpoch = (DateTime.MaxValue - __unixEpoch).Ticks / 10000 / 1000;
@@ -306,9 +306,9 @@ namespace Issuna.Core
 
             public static DateTime UnixEpoch { get { return __unixEpoch; } }
 
-            public static DateTime LongIdEpoch { get { return __jasmineIdEpoch; } }
+            public static DateTime JasmineIdEpoch { get { return __jasmineIdEpoch; } }
 
-            public static long LongIdEpochOffsetBySeconds { get { return __jasmineIdEpochOffsetBySeconds; } }
+            public static long JasmineIdEpochOffsetBySeconds { get { return __jasmineIdEpochOffsetBySeconds; } }
 
             public static DateTime ToUniversalTime(DateTime dateTime)
             {
@@ -382,24 +382,24 @@ namespace Issuna.Core
                 return millisecondsSinceEpoch;
             }
 
-            public static DateTime ToDateTimeFromSecondsSinceLongIdEpoch(long secondsSinceLongIdEpoch)
+            public static DateTime ToDateTimeFromSecondsSinceJasmineIdEpoch(long secondsSinceJasmineIdEpoch)
             {
-                return ToDateTimeFromSecondsSinceEpoch(LongIdEpochOffsetBySeconds + secondsSinceLongIdEpoch);
+                return ToDateTimeFromSecondsSinceEpoch(JasmineIdEpochOffsetBySeconds + secondsSinceJasmineIdEpoch);
             }
 
-            public static DateTime ToDateTimeFromMillisecondsSinceLongIdEpoch(long millisecondsSinceLongIdEpoch)
+            public static DateTime ToDateTimeFromMillisecondsSinceJasmineIdEpoch(long millisecondsSinceJasmineIdEpoch)
             {
-                return ToDateTimeFromMillisecondsSinceEpoch((LongIdEpochOffsetBySeconds * 1000) + millisecondsSinceLongIdEpoch);
+                return ToDateTimeFromMillisecondsSinceEpoch((JasmineIdEpochOffsetBySeconds * 1000) + millisecondsSinceJasmineIdEpoch);
             }
 
-            public static long GetSecondsSinceLongIdEpochFromDateTime(DateTime dateTime)
+            public static long GetSecondsSinceJasmineIdEpochFromDateTime(DateTime dateTime)
             {
-                return GetSecondsSinceEpochFromDateTime(dateTime) - LongIdEpochOffsetBySeconds;
+                return GetSecondsSinceEpochFromDateTime(dateTime) - JasmineIdEpochOffsetBySeconds;
             }
 
-            public static long GetMillisecondsSinceLongIdEpochFromDateTime(DateTime dateTime)
+            public static long GetMillisecondsSinceJasmineIdEpochFromDateTime(DateTime dateTime)
             {
-                return GetMillisecondsSinceEpochFromDateTime(dateTime) - (LongIdEpochOffsetBySeconds * 1000);
+                return GetMillisecondsSinceEpochFromDateTime(dateTime) - (JasmineIdEpochOffsetBySeconds * 1000);
             }
         }
     }

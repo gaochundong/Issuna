@@ -14,7 +14,7 @@ namespace Issuna.Core.Tests
             Assert.Equal(0, jasmineId.Precision);
             Assert.Equal(8337528, jasmineId.Timestamp);
             Assert.Equal(145242, jasmineId.Sequence);
-            Assert.Equal(JasmineId.LongIdTimer.LongIdEpoch.AddSeconds(8337528), jasmineId.CreationTime);
+            Assert.Equal(JasmineId.JasmineIdTimer.JasmineIdEpoch.AddSeconds(8337528), jasmineId.CreationTime);
             Assert.Equal("8742531905370", jasmineId.ToString());
         }
 
@@ -28,7 +28,7 @@ namespace Issuna.Core.Tests
             Assert.Equal(0, jasmineId.Precision);
             Assert.Equal(8337528, jasmineId.Timestamp);
             Assert.Equal(145242, jasmineId.Sequence);
-            Assert.Equal(JasmineId.LongIdTimer.LongIdEpoch.AddSeconds(8337528), jasmineId.CreationTime);
+            Assert.Equal(JasmineId.JasmineIdTimer.JasmineIdEpoch.AddSeconds(8337528), jasmineId.CreationTime);
             Assert.Equal("8742531905370", jasmineId.ToString());
         }
 
@@ -42,7 +42,7 @@ namespace Issuna.Core.Tests
             Assert.Equal(1, jasmineId.Precision);
             Assert.Equal(8337528000, jasmineId.Timestamp);
             Assert.Equal(145, jasmineId.Sequence);
-            Assert.Equal(JasmineId.LongIdTimer.LongIdEpoch.AddMilliseconds(8337528000), jasmineId.CreationTime);
+            Assert.Equal(JasmineId.JasmineIdTimer.JasmineIdEpoch.AddMilliseconds(8337528000), jasmineId.CreationTime);
             Assert.Equal("-4603796181450817391", jasmineId.ToString());
         }
 

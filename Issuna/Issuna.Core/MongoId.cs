@@ -46,7 +46,7 @@ namespace Issuna.Core
         }
 
         public MongoId(DateTime timestamp, int machine, short pid, int increment)
-            : this(ObjectIdTimer.GetTimestampFromDateTime(timestamp), machine, pid, increment)
+            : this(MongoIdTimer.GetTimestampFromDateTime(timestamp), machine, pid, increment)
         {
         }
 
@@ -73,7 +73,7 @@ namespace Issuna.Core
                 throw new ArgumentNullException("value");
             }
 
-            var bytes = ObjectIdHexer.ParseHexString(value);
+            var bytes = MongoIdHexer.ParseHexString(value);
             FromByteArray(bytes, 0, out _a, out _b, out _c);
         }
 
@@ -104,7 +104,7 @@ namespace Issuna.Core
 
         public DateTime CreationTime
         {
-            get { return ObjectIdTimer.UnixEpoch.AddSeconds(Timestamp); }
+            get { return MongoIdTimer.UnixEpoch.AddSeconds(Timestamp); }
         }
 
         public static bool operator <(MongoId left, MongoId right)
@@ -139,12 +139,12 @@ namespace Issuna.Core
 
         public static MongoId GenerateNewId()
         {
-            return GenerateNewId(ObjectIdTimer.GetTimestampFromDateTime(DateTime.UtcNow));
+            return GenerateNewId(MongoIdTimer.GetTimestampFromDateTime(DateTime.UtcNow));
         }
 
         public static MongoId GenerateNewId(DateTime timestamp)
         {
-            return GenerateNewId(ObjectIdTimer.GetTimestampFromDateTime(timestamp));
+            return GenerateNewId(MongoIdTimer.GetTimestampFromDateTime(timestamp));
         }
 
         public static MongoId GenerateNewId(int timestamp)
@@ -222,7 +222,7 @@ namespace Issuna.Core
             if (s != null && s.Length == 24)
             {
                 byte[] bytes;
-                if (ObjectIdHexer.TryParseHexString(s, out bytes))
+                if (MongoIdHexer.TryParseHexString(s, out bytes))
                 {
                     objectId = new MongoId(bytes);
                     return true;
@@ -336,16 +336,16 @@ namespace Issuna.Core
 
         public override string ToString()
         {
-            return ObjectIdHexer.ToHexString(ToByteArray());
+            return MongoIdHexer.ToHexString(ToByteArray());
         }
 
-        internal static class ObjectIdTimer
+        internal static class MongoIdTimer
         {
             private static readonly DateTime __unixEpoch;
             private static readonly long __dateTimeMaxValueMillisecondsSinceEpoch;
             private static readonly long __dateTimeMinValueMillisecondsSinceEpoch;
 
-            static ObjectIdTimer()
+            static MongoIdTimer()
             {
                 __unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
                 __dateTimeMaxValueMillisecondsSinceEpoch = (DateTime.MaxValue - __unixEpoch).Ticks / 10000;
@@ -391,7 +391,7 @@ namespace Issuna.Core
             }
         }
 
-        internal static class ObjectIdHexer
+        internal static class MongoIdHexer
         {
             public static string ToHexString(byte[] bytes)
             {

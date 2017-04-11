@@ -18,7 +18,7 @@ namespace Issuna.Core.Tests
             Assert.Equal(0x050607, mongoId.Machine);
             Assert.Equal(0x0809, mongoId.Pid);
             Assert.Equal(0x0a0b0c, mongoId.Increment);
-            Assert.Equal(MongoId.ObjectIdTimer.UnixEpoch.AddSeconds(0x01020304), mongoId.CreationTime);
+            Assert.Equal(MongoId.MongoIdTimer.UnixEpoch.AddSeconds(0x01020304), mongoId.CreationTime);
             Assert.Equal("0102030405060708090a0b0c", mongoId.ToString());
             Assert.True(bytes.SequenceEqual(mongoId.ToByteArray()));
         }
@@ -35,7 +35,7 @@ namespace Issuna.Core.Tests
             Assert.Equal(0x050607, mongoId.Machine);
             Assert.Equal(0x0809, mongoId.Pid);
             Assert.Equal(0x0a0b0c, mongoId.Increment);
-            Assert.Equal(MongoId.ObjectIdTimer.UnixEpoch.AddSeconds(0x01020304), mongoId.CreationTime);
+            Assert.Equal(MongoId.MongoIdTimer.UnixEpoch.AddSeconds(0x01020304), mongoId.CreationTime);
             Assert.Equal("0102030405060708090a0b0c", mongoId.ToString());
             Assert.True(bytes.SequenceEqual(mongoId.ToByteArray()));
         }
@@ -76,7 +76,7 @@ namespace Issuna.Core.Tests
         public void TestDateTimeConstructor()
         {
             byte[] bytes = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
-            var timestamp = MongoId.ObjectIdTimer.UnixEpoch.AddSeconds(0x01020304);
+            var timestamp = MongoId.MongoIdTimer.UnixEpoch.AddSeconds(0x01020304);
             var mongoId = new MongoId(timestamp, 0x050607, 0x0809, 0x0a0b0c);
             Assert.Equal(0x01020304, mongoId.Timestamp);
             Assert.Equal(0x050607, mongoId.Machine);
@@ -85,7 +85,7 @@ namespace Issuna.Core.Tests
             Assert.Equal(0x050607, mongoId.Machine);
             Assert.Equal(0x0809, mongoId.Pid);
             Assert.Equal(0x0a0b0c, mongoId.Increment);
-            Assert.Equal(MongoId.ObjectIdTimer.UnixEpoch.AddSeconds(0x01020304), mongoId.CreationTime);
+            Assert.Equal(MongoId.MongoIdTimer.UnixEpoch.AddSeconds(0x01020304), mongoId.CreationTime);
             Assert.Equal("0102030405060708090a0b0c", mongoId.ToString());
             Assert.True(bytes.SequenceEqual(mongoId.ToByteArray()));
         }
@@ -95,7 +95,7 @@ namespace Issuna.Core.Tests
         [InlineData(int.MaxValue)]
         public void TestDateTimeConstructorAtEdgeOfRange(int secondsSinceEpoch)
         {
-            var timestamp = MongoId.ObjectIdTimer.UnixEpoch.AddSeconds(secondsSinceEpoch);
+            var timestamp = MongoId.MongoIdTimer.UnixEpoch.AddSeconds(secondsSinceEpoch);
             var mongoId = new MongoId(timestamp, 0, 0, 0);
             Assert.Equal(timestamp, mongoId.CreationTime);
         }
@@ -105,7 +105,7 @@ namespace Issuna.Core.Tests
         [InlineData((long)int.MaxValue + 1)]
         public void TestDateTimeConstructorArgumentOutOfRangeException(long secondsSinceEpoch)
         {
-            var timestamp = MongoId.ObjectIdTimer.UnixEpoch.AddSeconds(secondsSinceEpoch);
+            var timestamp = MongoId.MongoIdTimer.UnixEpoch.AddSeconds(secondsSinceEpoch);
             Assert.Throws<ArgumentOutOfRangeException>(() => new MongoId(timestamp, 0, 0, 0));
         }
 
@@ -121,7 +121,7 @@ namespace Issuna.Core.Tests
             Assert.Equal(0x050607, mongoId.Machine);
             Assert.Equal(0x0809, mongoId.Pid);
             Assert.Equal(0x0a0b0c, mongoId.Increment);
-            Assert.Equal(MongoId.ObjectIdTimer.UnixEpoch.AddSeconds(0x01020304), mongoId.CreationTime);
+            Assert.Equal(MongoId.MongoIdTimer.UnixEpoch.AddSeconds(0x01020304), mongoId.CreationTime);
             Assert.Equal("0102030405060708090a0b0c", mongoId.ToString());
             Assert.True(bytes.SequenceEqual(mongoId.ToByteArray()));
         }
@@ -130,9 +130,9 @@ namespace Issuna.Core.Tests
         public void TestGenerateNewId()
         {
             // compare against two timestamps in case seconds since epoch changes in middle of test
-            var timestamp1 = (int)Math.Floor((DateTime.UtcNow - MongoId.ObjectIdTimer.UnixEpoch).TotalSeconds);
+            var timestamp1 = (int)Math.Floor((DateTime.UtcNow - MongoId.MongoIdTimer.UnixEpoch).TotalSeconds);
             var mongoId = MongoId.GenerateNewId();
-            var timestamp2 = (int)Math.Floor((DateTime.UtcNow - MongoId.ObjectIdTimer.UnixEpoch).TotalSeconds);
+            var timestamp2 = (int)Math.Floor((DateTime.UtcNow - MongoId.MongoIdTimer.UnixEpoch).TotalSeconds);
             Assert.True(mongoId.Timestamp == timestamp1 || mongoId.Timestamp == timestamp2);
             Assert.True(mongoId.Machine != 0);
             Assert.True(mongoId.Pid != 0);
@@ -341,7 +341,7 @@ namespace Issuna.Core.Tests
         }
 
         [Fact]
-        public void TestConvertObjectIdToObjectId()
+        public void TestConvertMongoIdToMongoId()
         {
             var oid = MongoId.GenerateNewId();
 
