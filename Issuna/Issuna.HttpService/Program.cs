@@ -4,7 +4,7 @@ using Happer.Hosting.Self;
 using Logrila.Logging;
 using Logrila.Logging.NLogIntegration;
 
-namespace Issuna.RestService
+namespace Issuna.HttpService
 {
     class Program
     {

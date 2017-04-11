@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{AD59CCA4-26DA-4196-8B59-57704A86AAF7}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>Issuna.RestService</RootNamespace>
-    <AssemblyName>Issuna.RestService</AssemblyName>
+    <RootNamespace>Issuna.HttpService</RootNamespace>
+    <AssemblyName>Issuna.HttpService</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>

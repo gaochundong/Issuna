@@ -2,7 +2,7 @@
 using Happer.Http;
 using Issuna.Core;
 
-namespace Issuna.RestService
+namespace Issuna.HttpService
 {
     public class MongoIdModule : Module
     {
