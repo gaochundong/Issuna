@@ -22,14 +22,22 @@ namespace Issuna.HttpService
         private dynamic GenerateId(dynamic parameters)
         {
             byte reserved = 0;
+            long timestamp = -1;
             byte region = 0;
             ushort machine = 0;
-            long timestamp = -1;
             int sequence = -1;
 
             if (this.Request.Query.reserved.HasValue)
             {
                 if (!byte.TryParse(this.Request.Query.reserved.Value.ToString(), out reserved))
+                {
+                    return HttpStatusCode.BadRequest;
+                }
+            }
+            if (this.Request.Query.timestamp.HasValue)
+            {
+                if (!long.TryParse(this.Request.Query.timestamp.Value.ToString(), out timestamp)
+                    || timestamp < 0)
                 {
                     return HttpStatusCode.BadRequest;
                 }
@@ -48,14 +56,6 @@ namespace Issuna.HttpService
                     return HttpStatusCode.BadRequest;
                 }
             }
-            if (this.Request.Query.timestamp.HasValue)
-            {
-                if (!long.TryParse(this.Request.Query.timestamp.Value.ToString(), out timestamp)
-                    || timestamp < 0)
-                {
-                    return HttpStatusCode.BadRequest;
-                }
-            }
             if (this.Request.Query.sequence.HasValue)
             {
                 if (!int.TryParse(this.Request.Query.sequence.Value.ToString(), out sequence)
@@ -65,8 +65,11 @@ namespace Issuna.HttpService
                 }
             }
 
-            return JasmineId.GenerateNewId(reserved, region, machine,
+            return JasmineId.GenerateNewId(
+                reserved: reserved,
                 timestamp: (timestamp > 0 ? (long?)timestamp : null),
+                region: region,
+                machine: machine,
                 sequence: (sequence > 0 ? (int?)sequence : null)).ToLong().ToString();
         }
 

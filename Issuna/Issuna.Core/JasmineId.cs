@@ -18,27 +18,27 @@ namespace Issuna.Core
     public struct JasmineId : IComparable<JasmineId>, IEquatable<JasmineId>
     {
         public const int ReservedBits = 1;   // 1 bit reserved, 0 by default
+        public const int TimestampBits = 30; // 30 bits covers more than 30 years
         public const int RegionBits = 3;     // 3 bits covers 7 regions
         public const int MachineBits = 10;   // 10 bits covers 1024 servers
-        public const int TimestampBits = 30; // 30 bits covers more than 30 years
         public const int SequenceBits = 20;  // 20 bits covers 1048576/second
 
         public const int SequenceShift = 0;
-        public const int TimestampShift = SequenceShift + SequenceBits;
-        public const int MachineShift = TimestampShift + TimestampBits;
+        public const int MachineShift = SequenceShift + SequenceBits;
         public const int RegionShift = MachineShift + MachineBits;
-        public const int ReservedShift = RegionShift + RegionBits;
+        public const int TimestampShift = RegionShift + RegionBits;
+        public const int ReservedShift = TimestampShift + TimestampBits;
 
         public const int ReservedMask = -1 ^ (-1 << ReservedBits);
+        public const long TimestampMask = -1L ^ (-1L << TimestampBits);
         public const int RegionMask = -1 ^ (-1 << RegionBits);
         public const int MachineMask = -1 ^ (-1 << MachineBits);
-        public const long TimestampMask = -1L ^ (-1L << TimestampBits);
         public const int SequenceMask = -1 ^ (-1 << SequenceBits);
 
         public const int MaxReserved = -1 ^ (-1 << ReservedBits);
+        public const long MaxTimestamp = -1L ^ (-1L << TimestampBits);
         public const int MaxRegion = -1 ^ (-1 << RegionBits);
         public const int MaxMachine = -1 ^ (-1 << MachineBits);
-        public const long MaxTimestamp = -1L ^ (-1L << TimestampBits);
         public const int MaxSequence = -1 ^ (-1 << SequenceBits);
 
         private static int __staticSequence = (new Random()).Next();
@@ -51,53 +51,53 @@ namespace Issuna.Core
 
         public JasmineId(long id)
         {
-            Unpack(id, out _reserved, out _region, out _machine, out _timestamp, out _sequence);
+            Unpack(id, out _reserved, out _timestamp, out _region, out _machine, out _sequence);
         }
 
-        public JasmineId(byte reserved, byte region, ushort machine, long timestamp, int sequence)
+        public JasmineId(byte reserved, long timestamp, byte region, ushort machine, int sequence)
         {
-            SanityCheck(reserved, region, machine, timestamp, sequence);
+            SanityCheck(reserved, timestamp, region, machine, sequence);
 
             _reserved = reserved;
+            _timestamp = timestamp;
             _region = region;
             _machine = machine;
-            _timestamp = timestamp;
             _sequence = sequence;
         }
 
         public byte Reserved { get { return _reserved; } }
+        public long Timestamp { get { return _timestamp; } }
         public byte Region { get { return _region; } }
         public ushort Machine { get { return _machine; } }
-        public long Timestamp { get { return _timestamp; } }
         public int Sequence { get { return _sequence; } }
         public DateTime CreationTime { get { return JasmineIdTimer.ToDateTimeFromSecondsSinceJasmineIdEpoch(Timestamp); } }
 
         public long ToLong()
         {
-            return Pack(Reserved, Region, Machine, Timestamp, Sequence);
+            return Pack(Reserved, Timestamp, Region, Machine, Sequence);
         }
 
-        public static long Pack(byte reserved, byte region, ushort machine, long timestamp, int sequence)
+        public static long Pack(byte reserved, long timestamp, byte region, ushort machine, int sequence)
         {
-            SanityCheck(reserved, region, machine, timestamp, sequence);
+            SanityCheck(reserved, timestamp, region, machine, sequence);
 
             long id = 0;
 
             id |= ((long)(reserved & ReservedMask)) << ReservedShift;
+            id |= ((long)(timestamp & TimestampMask)) << TimestampShift;
             id |= ((long)(region & RegionMask)) << RegionShift;
             id |= ((long)(machine & MachineMask)) << MachineShift;
-            id |= ((long)(timestamp & TimestampMask)) << TimestampShift;
             id |= ((long)(sequence & SequenceMask)) << SequenceShift;
 
             return id;
         }
 
-        public static void Unpack(long jasmineId, out byte reserved, out byte region, out ushort machine, out long timestamp, out int sequence)
+        public static void Unpack(long jasmineId, out byte reserved, out long timestamp, out byte region, out ushort machine, out int sequence)
         {
             reserved = (byte)((jasmineId >> ReservedShift) & ReservedMask);
+            timestamp = (long)((jasmineId >> TimestampShift) & TimestampMask);
             region = (byte)((jasmineId >> RegionShift) & RegionMask);
             machine = (ushort)((jasmineId >> MachineShift) & MachineMask);
-            timestamp = (long)((jasmineId >> TimestampShift) & TimestampMask);
             sequence = (int)((jasmineId >> SequenceShift) & SequenceMask);
         }
 
@@ -155,13 +155,19 @@ namespace Issuna.Core
             }
         }
 
-        private static void SanityCheck(byte reserved, byte region, ushort machine, long timestamp, int sequence)
+        private static void SanityCheck(byte reserved, long timestamp, byte region, ushort machine, int sequence)
         {
             if (reserved < 0 || MaxReserved < reserved)
             {
                 throw new ArgumentOutOfRangeException("reserved",
                     string.Format("The 'reserved' value must be between 0 and {0} (it must fit in {1} bits).",
                         MaxReserved, ReservedBits));
+            }
+            if (timestamp < 0 || MaxTimestamp < timestamp)
+            {
+                throw new ArgumentOutOfRangeException("timestamp",
+                    string.Format("The 'timestamp' value must be between 0 and {0} (it must fit in {1} bits).",
+                        MaxTimestamp, TimestampBits));
             }
             if (region < 0 || MaxRegion < region)
             {
@@ -175,12 +181,6 @@ namespace Issuna.Core
                     string.Format("The 'machine' value must be between 0 and {0} (it must fit in {1} bits).",
                         MaxMachine, MachineBits));
             }
-            if (timestamp < 0 || MaxTimestamp < timestamp)
-            {
-                throw new ArgumentOutOfRangeException("timestamp",
-                    string.Format("The 'timestamp' value must be between 0 and {0} (it must fit in {1} bits).",
-                        MaxTimestamp, TimestampBits));
-            }
             if (sequence < 0 || MaxSequence < sequence)
             {
                 throw new ArgumentOutOfRangeException("sequence",
@@ -189,14 +189,14 @@ namespace Issuna.Core
             }
         }
 
-        public static JasmineId GenerateNewId(byte reserved = 0, byte region = 4, ushort machine = 0, DateTime? timestamp = null, int? sequence = null)
+        public static JasmineId GenerateNewId(byte reserved = 0, DateTime? timestamp = null, byte region = 0, ushort machine = 0, int? sequence = null)
         {
             long timestampLong = JasmineIdTimer.GetSecondsSinceJasmineIdEpochFromDateTime(timestamp.HasValue ? timestamp.Value : DateTime.UtcNow);
 
-            return GenerateNewId(reserved, region, machine, timestamp: timestampLong, sequence: sequence);
+            return GenerateNewId(reserved: reserved, timestamp: timestampLong, region: region, machine: machine, sequence: sequence);
         }
 
-        public static JasmineId GenerateNewId(byte reserved = 0, byte region = 4, ushort machine = 0, long? timestamp = null, int? sequence = null)
+        public static JasmineId GenerateNewId(byte reserved = 0, long? timestamp = null, byte region = 0, ushort machine = 0, int? sequence = null)
         {
             long timestampLong = timestamp.HasValue ? timestamp.Value : JasmineIdTimer.GetSecondsSinceJasmineIdEpochFromDateTime(DateTime.UtcNow);
 
@@ -211,7 +211,7 @@ namespace Issuna.Core
                 sequenceInt = increment & SequenceMask;
             }
 
-            return new JasmineId(reserved, region, machine, timestampLong, sequenceInt);
+            return new JasmineId(reserved, timestampLong, region, machine, sequenceInt);
         }
 
         public int CompareTo(JasmineId other)
@@ -248,8 +248,8 @@ namespace Issuna.Core
 
         public string ToText()
         {
-            return string.Format("Reserved[{0}], Region[{1}], Machine[{2}], Timestamp[{3}], Sequence[{4}]",
-                Reserved, Region, Machine, Timestamp, Sequence);
+            return string.Format("Reserved[{0}], Timestamp[{1}], Region[{2}], Machine[{3}], Sequence[{4}]",
+                Reserved, Timestamp, Region, Machine, Sequence);
         }
 
         public static explicit operator long(JasmineId jasmineId)
