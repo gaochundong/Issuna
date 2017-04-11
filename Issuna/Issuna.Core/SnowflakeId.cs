@@ -20,7 +20,7 @@ namespace Issuna.Core
 
         public const int WorkerIdShift = SequenceBits;
         public const int DataCenterIdShift = SequenceBits + WorkerIdBits;
-        public const int TimestampLeftShift = SequenceBits + WorkerIdBits + DataCenterIdBits;
+        public const int TimestampShift = SequenceBits + WorkerIdBits + DataCenterIdBits;
 
         public const long TimestampMask = -1L ^ (-1L << TimestampBits);
         public const long DataCenterIdMask = -1L ^ (-1L << DataCenterIdBits);
@@ -78,7 +78,7 @@ namespace Issuna.Core
 
                 _lastTimestamp = timestamp;
 
-                var id = ((timestamp - TwitterEpoch) << TimestampLeftShift) |
+                var id = ((timestamp - TwitterEpoch) << TimestampShift) |
                          (DataCenterId << DataCenterIdShift) |
                          (WorkerId << WorkerIdShift) |
                          (_sequence);
@@ -104,7 +104,7 @@ namespace Issuna.Core
 
         public static void Unpack(long snowflake, out long timestamp, out long dataCenterId, out long workerId, out long sequence)
         {
-            timestamp = (long)((snowflake >> TimestampLeftShift) & TimestampMask);
+            timestamp = (long)((snowflake >> TimestampShift) & TimestampMask);
             dataCenterId = (long)((snowflake >> DataCenterIdShift) & DataCenterIdMask);
             workerId = (long)((snowflake >> WorkerIdShift) & WorkerIdMask);
             sequence = (long)(snowflake & SequenceMask);

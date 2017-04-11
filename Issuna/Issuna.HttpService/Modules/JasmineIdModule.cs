@@ -24,29 +24,26 @@ namespace Issuna.HttpService
             byte reserved = 0;
             byte region = 0;
             ushort machine = 0;
-            byte precision = 0;
-            long timestamp = 0;
+            long timestamp = -1;
+            int sequence = -1;
 
+            if (this.Request.Query.reserved.HasValue)
+            {
+                if (!byte.TryParse(this.Request.Query.reserved.Value.ToString(), out reserved))
+                {
+                    return HttpStatusCode.BadRequest;
+                }
+            }
             if (this.Request.Query.region.HasValue)
             {
-                if (!byte.TryParse(this.Request.Query.region.Value.ToString(), out region)
-                    || region < 0)
+                if (!byte.TryParse(this.Request.Query.region.Value.ToString(), out region))
                 {
                     return HttpStatusCode.BadRequest;
                 }
             }
             if (this.Request.Query.machine.HasValue)
             {
-                if (!ushort.TryParse(this.Request.Query.machine.Value.ToString(), out machine)
-                    || machine < 0)
-                {
-                    return HttpStatusCode.BadRequest;
-                }
-            }
-            if (this.Request.Query.precision.HasValue)
-            {
-                if (!byte.TryParse(this.Request.Query.precision.Value.ToString(), out precision)
-                    || precision < 0)
+                if (!ushort.TryParse(this.Request.Query.machine.Value.ToString(), out machine))
                 {
                     return HttpStatusCode.BadRequest;
                 }
@@ -59,9 +56,18 @@ namespace Issuna.HttpService
                     return HttpStatusCode.BadRequest;
                 }
             }
+            if (this.Request.Query.sequence.HasValue)
+            {
+                if (!int.TryParse(this.Request.Query.sequence.Value.ToString(), out sequence)
+                    || sequence < 0)
+                {
+                    return HttpStatusCode.BadRequest;
+                }
+            }
 
-            return JasmineId.GenerateNewId(reserved, region, machine, precision,
-                timestamp: (timestamp > 0 ? (long?)timestamp : null)).ToLong().ToString();
+            return JasmineId.GenerateNewId(reserved, region, machine,
+                timestamp: (timestamp > 0 ? (long?)timestamp : null),
+                sequence: (sequence > 0 ? (int?)sequence : null)).ToLong().ToString();
         }
 
         private dynamic InverseId(dynamic parameters)
