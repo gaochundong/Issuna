@@ -10,13 +10,11 @@ namespace Issuna.Core
         public static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         public const long TwitterEpoch = 1288834974657L; // Thu, 04 Nov 2010 01:42:54 GMT
 
-        public const int TimestampBits = 41;
-        public const int DataCenterIdBits = 5;
-        public const int WorkerIdBits = 5;
-        public const int SequenceBits = 12;
-
-        public const long MaxDataCenterId = -1L ^ (-1L << DataCenterIdBits);
-        public const long MaxWorkerId = -1L ^ (-1L << WorkerIdBits);
+        public const int NoUseBits = 1;        // 1 bit no use, so 0 by default
+        public const int TimestampBits = 41;   // 41 bits timestamp with milliseconds covers more than 139 years
+        public const int DataCenterIdBits = 5; // 5 bits covers 32 data centers
+        public const int WorkerIdBits = 5;     // 5 bits covers 32 servers per data center
+        public const int SequenceBits = 12;    // 12 bits sequence covers 4096/millisecond
 
         public const int WorkerIdShift = SequenceBits;
         public const int DataCenterIdShift = SequenceBits + WorkerIdBits;
@@ -26,6 +24,9 @@ namespace Issuna.Core
         public const long DataCenterIdMask = -1L ^ (-1L << DataCenterIdBits);
         public const long WorkerIdMask = -1L ^ (-1L << WorkerIdBits);
         public const long SequenceMask = -1L ^ (-1L << SequenceBits);
+
+        public const long MaxDataCenterId = -1L ^ (-1L << DataCenterIdBits);
+        public const long MaxWorkerId = -1L ^ (-1L << WorkerIdBits);
 
         private long _sequence = 0L;
         private long _lastTimestamp = -1L;
