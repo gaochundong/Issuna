@@ -7,7 +7,7 @@ namespace Issuna.HttpService
 {
     public class SnowflakeIdModule : Module
     {
-        private SnowflakeId _snowflakeId = new SnowflakeId(1, 1);
+        private SnowflakeId _snowflakeId = new SnowflakeId();
 
         public SnowflakeIdModule()
             : base(@"/snowflake")
@@ -16,9 +16,9 @@ namespace Issuna.HttpService
             {
                 return GenerateId(parameters);
             });
-            Get("/inverse", parameters =>
+            Get("/decode", parameters =>
             {
-                return InverseId(parameters);
+                return DecodeId(parameters);
             });
         }
 
@@ -27,7 +27,7 @@ namespace Issuna.HttpService
             return _snowflakeId.GenerateNewId().ToString();
         }
 
-        private dynamic InverseId(dynamic parameters)
+        private dynamic DecodeId(dynamic parameters)
         {
             if (!this.Request.Query.id.HasValue)
             {

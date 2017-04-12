@@ -32,7 +32,12 @@ namespace Issuna.Core
         private long _lastTimestamp = -1L;
         private readonly object _lock = new object();
 
-        public SnowflakeId(long dataCenterId, long workerId, long sequence = 0L)
+        public SnowflakeId()
+            : this(0, 0)
+        {
+        }
+
+        public SnowflakeId(long dataCenterId, long workerId)
         {
             if (dataCenterId > MaxDataCenterId || dataCenterId < 0)
             {
@@ -45,7 +50,6 @@ namespace Issuna.Core
 
             this.DataCenterId = dataCenterId;
             this.WorkerId = workerId;
-            this.Sequence = sequence;
         }
 
         public long DataCenterId { get; private set; }

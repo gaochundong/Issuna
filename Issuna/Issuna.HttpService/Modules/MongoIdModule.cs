@@ -13,9 +13,9 @@ namespace Issuna.HttpService
             {
                 return GenerateId(parameters);
             });
-            Get("/inverse", parameters =>
+            Get("/decode", parameters =>
             {
-                return InverseId(parameters);
+                return DecodeId(parameters);
             });
         }
 
@@ -36,7 +36,7 @@ namespace Issuna.HttpService
                 MongoId.GenerateNewId(timestamp).ToString() : MongoId.GenerateNewId().ToString();
         }
 
-        private dynamic InverseId(dynamic parameters)
+        private dynamic DecodeId(dynamic parameters)
         {
             if (!this.Request.Query.id.HasValue)
             {
