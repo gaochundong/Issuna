@@ -186,6 +186,11 @@ namespace Issuna.Core
             }
         }
 
+        public static PeonyId GenerateNewId()
+        {
+            return GenerateNewId(timestamp: (DateTime?)null);
+        }
+
         public static PeonyId GenerateNewId(byte reserved = 0, DateTime? timestamp = null, byte region = 0, ushort machine = 0, int? sequence = null)
         {
             long timestampLong = PeonyIdTimer.GetMillisecondsSincePeonyIdEpochFromDateTime(timestamp.HasValue ? timestamp.Value : DateTime.UtcNow);

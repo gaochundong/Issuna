@@ -186,6 +186,11 @@ namespace Issuna.Core
             }
         }
 
+        public static JasmineId GenerateNewId()
+        {
+            return GenerateNewId(timestamp: (DateTime?)null);
+        }
+
         public static JasmineId GenerateNewId(byte reserved = 0, DateTime? timestamp = null, byte region = 0, ushort machine = 0, int? sequence = null)
         {
             long timestampLong = JasmineIdTimer.GetSecondsSinceJasmineIdEpochFromDateTime(timestamp.HasValue ? timestamp.Value : DateTime.UtcNow);
