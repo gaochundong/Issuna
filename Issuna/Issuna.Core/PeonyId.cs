@@ -3,19 +3,11 @@ using System.Threading;
 
 namespace Issuna.Core
 {
-    /// <summary>
-    /// PeonyId is a 64-bit(long/int64) ID consists of:
-    /// 1-bit as reserved, 0 by default.
-    /// 40-bit represents timestamp with milliseconds, 40 bits with milliseconds covers more than 30 years.
-    /// 3-bit represents deployment region, 3 bits covers 7 regions.
-    /// 10-bit represents machine identifier, 10 bits covers 1024 servers.
-    /// 10-bit represents sequence, 10 bits covers 1024/millisecond.
-    /// </summary>
     [Serializable]
     public struct PeonyId : IComparable<PeonyId>, IEquatable<PeonyId>
     {
         public const int ReservedBits = 1;   // 1 bit reserved, 0 by default
-        public const int TimestampBits = 40; // 40 bits with milliseconds covers more than 30 years
+        public const int TimestampBits = 40; // 40 bits timestamp with milliseconds, max ‭1099511627775‬, 1099511627775/31536000000 = 34.86 years
         public const int RegionBits = 3;     // 3 bits covers 7 regions
         public const int MachineBits = 10;   // 10 bits covers 1024 servers
         public const int SequenceBits = 10;  // 10 bits covers 1024/millisecond
@@ -400,7 +392,7 @@ namespace Issuna.Core
                 var secondsSinceEpoch = (long)Math.Floor((ToUniversalTime(dateTime) - UnixEpoch).TotalSeconds);
                 if (secondsSinceEpoch < long.MinValue || secondsSinceEpoch > long.MaxValue)
                 {
-                    throw new ArgumentOutOfRangeException("timestamp");
+                    throw new ArgumentOutOfRangeException("dateTime");
                 }
                 return secondsSinceEpoch;
             }
@@ -410,7 +402,7 @@ namespace Issuna.Core
                 var millisecondsSinceEpoch = (long)Math.Floor((ToUniversalTime(dateTime) - UnixEpoch).TotalMilliseconds);
                 if (millisecondsSinceEpoch < long.MinValue || millisecondsSinceEpoch > long.MaxValue)
                 {
-                    throw new ArgumentOutOfRangeException("timestamp");
+                    throw new ArgumentOutOfRangeException("dateTime");
                 }
                 return millisecondsSinceEpoch;
             }

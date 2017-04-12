@@ -55,6 +55,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CatkinIdTests.cs" />
     <Compile Include="PeonyIdTests.cs" />
     <Compile Include="JasmineIdTests.cs" />
     <Compile Include="MongoIdTests.cs" />

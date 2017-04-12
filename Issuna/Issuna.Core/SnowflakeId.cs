@@ -2,16 +2,13 @@
 
 namespace Issuna.Core
 {
-    /// <summary>
-    /// Twitter Snowflake: 1bit no-use + 41bit timestamp + 10bit machine + 12bit sequence.
-    /// </summary>
     public class SnowflakeId
     {
         public static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         public const long TwitterEpoch = 1288834974657L; // Thu, 04 Nov 2010 01:42:54 GMT
 
         public const int NoUseBits = 1;        // 1 bit no use, so 0 by default
-        public const int TimestampBits = 41;   // 41 bits timestamp with milliseconds covers more than 139 years
+        public const int TimestampBits = 41;   // 41 bits timestamp with milliseconds, max ‭2199023255551‬, 2199023255551/31536000000 = 69.73 years
         public const int DataCenterIdBits = 5; // 5 bits covers 32 data centers
         public const int WorkerIdBits = 5;     // 5 bits covers 32 servers per data center
         public const int SequenceBits = 12;    // 12 bits sequence covers 4096/millisecond
@@ -25,8 +22,10 @@ namespace Issuna.Core
         public const long WorkerIdMask = -1L ^ (-1L << WorkerIdBits);
         public const long SequenceMask = -1L ^ (-1L << SequenceBits);
 
+        public const long MaxTimestamp = -1L ^ (-1L << TimestampBits);
         public const long MaxDataCenterId = -1L ^ (-1L << DataCenterIdBits);
         public const long MaxWorkerId = -1L ^ (-1L << WorkerIdBits);
+        public const long MaxSequence = -1L ^ (-1L << SequenceBits);
 
         private long _sequence = 0L;
         private long _lastTimestamp = -1L;

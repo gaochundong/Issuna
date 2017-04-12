@@ -17,6 +17,7 @@ namespace Issuna.HttpService
             var container = new ModuleContainer();
             container.AddModule(new JasmineIdModule());
             container.AddModule(new PeonyIdModule());
+            container.AddModule(new CatkinIdModule());
             container.AddModule(new MongoIdModule());
             container.AddModule(new SnowflakeIdModule());
 

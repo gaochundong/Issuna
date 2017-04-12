@@ -4,13 +4,13 @@ using System.Threading;
 namespace Issuna.Core
 {
     [Serializable]
-    public struct JasmineId : IComparable<JasmineId>, IEquatable<JasmineId>
+    public struct CatkinId : IComparable<CatkinId>, IEquatable<CatkinId>
     {
         public const int ReservedBits = 1;   // 1 bit reserved, 0 by default
-        public const int TimestampBits = 30; // 30 bits timestamp with seconds, max ‭1073741823‬, 1073741823/31536000 = 34.04 years
+        public const int TimestampBits = 41; // 41 bits timestamp with milliseconds, max ‭2199023255551‬, 2199023255551/31536000000 = 69.73 years
         public const int RegionBits = 4;     // 4 bits covers 16 regions
-        public const int MachineBits = 9;    // 9 bits covers 512 servers
-        public const int SequenceBits = 20;  // 20 bits covers 1048576/second
+        public const int MachineBits = 5;    // 5 bits covers 32 servers
+        public const int SequenceBits = 13;  // 13 bits covers 8192/millisecond
 
         public const int SequenceShift = 0;
         public const int MachineShift = SequenceShift + SequenceBits;
@@ -38,12 +38,12 @@ namespace Issuna.Core
         private long _timestamp;
         private int _sequence;
 
-        public JasmineId(long id)
+        public CatkinId(long id)
         {
             Unpack(id, out _reserved, out _timestamp, out _region, out _machine, out _sequence);
         }
 
-        public JasmineId(byte reserved, long timestamp, byte region, ushort machine, int sequence)
+        public CatkinId(byte reserved, long timestamp, byte region, ushort machine, int sequence)
         {
             SanityCheck(reserved, timestamp, region, machine, sequence);
 
@@ -59,7 +59,7 @@ namespace Issuna.Core
         public byte Region { get { return _region; } }
         public ushort Machine { get { return _machine; } }
         public int Sequence { get { return _sequence; } }
-        public DateTime CreationTime { get { return JasmineIdTimer.ToDateTimeFromSecondsSinceJasmineIdEpoch(Timestamp); } }
+        public DateTime CreationTime { get { return CatkinIdTimer.ToDateTimeFromMillisecondsSinceCatkinIdEpoch(Timestamp); } }
 
         public long ToLong()
         {
@@ -81,65 +81,65 @@ namespace Issuna.Core
             return id;
         }
 
-        public static void Unpack(long jasmineId, out byte reserved, out long timestamp, out byte region, out ushort machine, out int sequence)
+        public static void Unpack(long catkinId, out byte reserved, out long timestamp, out byte region, out ushort machine, out int sequence)
         {
-            reserved = (byte)((jasmineId >> ReservedShift) & ReservedMask);
-            timestamp = (long)((jasmineId >> TimestampShift) & TimestampMask);
-            region = (byte)((jasmineId >> RegionShift) & RegionMask);
-            machine = (ushort)((jasmineId >> MachineShift) & MachineMask);
-            sequence = (int)((jasmineId >> SequenceShift) & SequenceMask);
+            reserved = (byte)((catkinId >> ReservedShift) & ReservedMask);
+            timestamp = (long)((catkinId >> TimestampShift) & TimestampMask);
+            region = (byte)((catkinId >> RegionShift) & RegionMask);
+            machine = (ushort)((catkinId >> MachineShift) & MachineMask);
+            sequence = (int)((catkinId >> SequenceShift) & SequenceMask);
         }
 
-        public static JasmineId Parse(string value)
+        public static CatkinId Parse(string value)
         {
             if (value == null)
             {
                 throw new ArgumentNullException("value");
             }
 
-            JasmineId jasmineId;
-            if (TryParse(value, out jasmineId))
+            CatkinId catkinId;
+            if (TryParse(value, out catkinId))
             {
-                return jasmineId;
+                return catkinId;
             }
             else
             {
-                var message = string.Format("'{0}' is not a valid JasmineId string.", value);
+                var message = string.Format("'{0}' is not a valid CatkinId string.", value);
                 throw new FormatException(message);
             }
         }
 
-        public static JasmineId Parse(long value)
+        public static CatkinId Parse(long value)
         {
-            return new JasmineId(value);
+            return new CatkinId(value);
         }
 
-        public static bool TryParse(string value, out JasmineId jasmineId)
+        public static bool TryParse(string value, out CatkinId catkinId)
         {
             if (!string.IsNullOrEmpty(value))
             {
                 long id;
                 if (long.TryParse(value, out id))
                 {
-                    jasmineId = new JasmineId(id);
+                    catkinId = new CatkinId(id);
                     return true;
                 }
             }
 
-            jasmineId = default(JasmineId);
+            catkinId = default(CatkinId);
             return false;
         }
 
-        public static bool TryParse(long value, out JasmineId jasmineId)
+        public static bool TryParse(long value, out CatkinId catkinId)
         {
             try
             {
-                jasmineId = new JasmineId(value);
+                catkinId = new CatkinId(value);
                 return true;
             }
             catch
             {
-                jasmineId = default(JasmineId);
+                catkinId = default(CatkinId);
                 return false;
             }
         }
@@ -178,21 +178,21 @@ namespace Issuna.Core
             }
         }
 
-        public static JasmineId GenerateNewId()
+        public static CatkinId GenerateNewId()
         {
             return GenerateNewId(timestamp: (DateTime?)null);
         }
 
-        public static JasmineId GenerateNewId(byte reserved = 0, DateTime? timestamp = null, byte region = 0, ushort machine = 0, int? sequence = null)
+        public static CatkinId GenerateNewId(byte reserved = 0, DateTime? timestamp = null, byte region = 0, ushort machine = 0, int? sequence = null)
         {
-            long timestampLong = JasmineIdTimer.GetSecondsSinceJasmineIdEpochFromDateTime(timestamp.HasValue ? timestamp.Value : DateTime.UtcNow);
+            long timestampLong = CatkinIdTimer.GetMillisecondsSinceCatkinIdEpochFromDateTime(timestamp.HasValue ? timestamp.Value : DateTime.UtcNow);
 
             return GenerateNewId(reserved: reserved, timestamp: timestampLong, region: region, machine: machine, sequence: sequence);
         }
 
-        public static JasmineId GenerateNewId(byte reserved = 0, long? timestamp = null, byte region = 0, ushort machine = 0, int? sequence = null)
+        public static CatkinId GenerateNewId(byte reserved = 0, long? timestamp = null, byte region = 0, ushort machine = 0, int? sequence = null)
         {
-            long timestampLong = timestamp.HasValue ? timestamp.Value : JasmineIdTimer.GetSecondsSinceJasmineIdEpochFromDateTime(DateTime.UtcNow);
+            long timestampLong = timestamp.HasValue ? timestamp.Value : CatkinIdTimer.GetMillisecondsSinceCatkinIdEpochFromDateTime(DateTime.UtcNow);
 
             int sequenceInt = -1;
             if (sequence.HasValue)
@@ -205,24 +205,24 @@ namespace Issuna.Core
                 sequenceInt = increment & SequenceMask;
             }
 
-            return new JasmineId(reserved, timestampLong, region, machine, sequenceInt);
+            return new CatkinId(reserved, timestampLong, region, machine, sequenceInt);
         }
 
-        public int CompareTo(JasmineId other)
+        public int CompareTo(CatkinId other)
         {
             return ((long)this).CompareTo((long)other);
         }
 
-        public bool Equals(JasmineId other)
+        public bool Equals(CatkinId other)
         {
             return ((long)this).Equals((long)other);
         }
 
         public override bool Equals(object obj)
         {
-            if (obj is JasmineId)
+            if (obj is CatkinId)
             {
-                return Equals((JasmineId)obj);
+                return Equals((CatkinId)obj);
             }
             else
             {
@@ -246,47 +246,47 @@ namespace Issuna.Core
                 Reserved, Timestamp, Region, Machine, Sequence);
         }
 
-        public static explicit operator long(JasmineId jasmineId)
+        public static explicit operator long(CatkinId catkinId)
         {
-            return jasmineId.ToLong();
+            return catkinId.ToLong();
         }
 
-        public static explicit operator string(JasmineId jasmineId)
+        public static explicit operator string(CatkinId catkinId)
         {
-            return jasmineId.ToString();
+            return catkinId.ToString();
         }
 
-        public static bool operator <(JasmineId left, JasmineId right)
+        public static bool operator <(CatkinId left, CatkinId right)
         {
             return left.CompareTo(right) < 0;
         }
 
-        public static bool operator <=(JasmineId left, JasmineId right)
+        public static bool operator <=(CatkinId left, CatkinId right)
         {
             return left.CompareTo(right) <= 0;
         }
 
-        public static bool operator ==(JasmineId left, JasmineId right)
+        public static bool operator ==(CatkinId left, CatkinId right)
         {
             return left.Equals(right);
         }
 
-        public static bool operator !=(JasmineId left, JasmineId right)
+        public static bool operator !=(CatkinId left, CatkinId right)
         {
             return !(left == right);
         }
 
-        public static bool operator >=(JasmineId left, JasmineId right)
+        public static bool operator >=(CatkinId left, CatkinId right)
         {
             return left.CompareTo(right) >= 0;
         }
 
-        public static bool operator >(JasmineId left, JasmineId right)
+        public static bool operator >(CatkinId left, CatkinId right)
         {
             return left.CompareTo(right) > 0;
         }
 
-        internal static class JasmineIdTimer
+        internal static class CatkinIdTimer
         {
             private static readonly DateTime __unixEpoch;
             private static readonly long __dateTimeMaxValueSecondsSinceEpoch;
@@ -294,10 +294,10 @@ namespace Issuna.Core
             private static readonly long __dateTimeMaxValueMillisecondsSinceEpoch;
             private static readonly long __dateTimeMinValueMillisecondsSinceEpoch;
 
-            private static readonly DateTime __jasmineIdEpoch;
-            private static readonly long __jasmineIdEpochOffsetBySeconds; // 1483228800
+            private static readonly DateTime __catkinIdEpoch;
+            private static readonly long __catkinIdEpochOffsetBySeconds; // 1483228800
 
-            static JasmineIdTimer()
+            static CatkinIdTimer()
             {
                 __unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
                 __dateTimeMaxValueSecondsSinceEpoch = (DateTime.MaxValue - __unixEpoch).Ticks / 10000 / 1000;
@@ -305,8 +305,8 @@ namespace Issuna.Core
                 __dateTimeMaxValueMillisecondsSinceEpoch = (DateTime.MaxValue - __unixEpoch).Ticks / 10000;
                 __dateTimeMinValueMillisecondsSinceEpoch = (DateTime.MinValue - __unixEpoch).Ticks / 10000;
 
-                __jasmineIdEpoch = new DateTime(2017, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-                __jasmineIdEpochOffsetBySeconds = (__jasmineIdEpoch - __unixEpoch).Ticks / 10000 / 1000;
+                __catkinIdEpoch = new DateTime(2017, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+                __catkinIdEpochOffsetBySeconds = (__catkinIdEpoch - __unixEpoch).Ticks / 10000 / 1000;
             }
 
             public static long DateTimeMaxValueSecondsSinceEpoch
@@ -331,9 +331,9 @@ namespace Issuna.Core
 
             public static DateTime UnixEpoch { get { return __unixEpoch; } }
 
-            public static DateTime JasmineIdEpoch { get { return __jasmineIdEpoch; } }
+            public static DateTime CatkinIdEpoch { get { return __catkinIdEpoch; } }
 
-            public static long JasmineIdEpochOffsetBySeconds { get { return __jasmineIdEpochOffsetBySeconds; } }
+            public static long CatkinIdEpochOffsetBySeconds { get { return __catkinIdEpochOffsetBySeconds; } }
 
             public static DateTime ToUniversalTime(DateTime dateTime)
             {
@@ -407,24 +407,24 @@ namespace Issuna.Core
                 return millisecondsSinceEpoch;
             }
 
-            public static DateTime ToDateTimeFromSecondsSinceJasmineIdEpoch(long secondsSinceJasmineIdEpoch)
+            public static DateTime ToDateTimeFromSecondsSinceCatkinIdEpoch(long secondsSinceCatkinIdEpoch)
             {
-                return ToDateTimeFromSecondsSinceEpoch(JasmineIdEpochOffsetBySeconds + secondsSinceJasmineIdEpoch);
+                return ToDateTimeFromSecondsSinceEpoch(CatkinIdEpochOffsetBySeconds + secondsSinceCatkinIdEpoch);
             }
 
-            public static DateTime ToDateTimeFromMillisecondsSinceJasmineIdEpoch(long millisecondsSinceJasmineIdEpoch)
+            public static DateTime ToDateTimeFromMillisecondsSinceCatkinIdEpoch(long millisecondsSinceCatkinIdEpoch)
             {
-                return ToDateTimeFromMillisecondsSinceEpoch((JasmineIdEpochOffsetBySeconds * 1000) + millisecondsSinceJasmineIdEpoch);
+                return ToDateTimeFromMillisecondsSinceEpoch((CatkinIdEpochOffsetBySeconds * 1000) + millisecondsSinceCatkinIdEpoch);
             }
 
-            public static long GetSecondsSinceJasmineIdEpochFromDateTime(DateTime dateTime)
+            public static long GetSecondsSinceCatkinIdEpochFromDateTime(DateTime dateTime)
             {
-                return GetSecondsSinceEpochFromDateTime(dateTime) - JasmineIdEpochOffsetBySeconds;
+                return GetSecondsSinceEpochFromDateTime(dateTime) - CatkinIdEpochOffsetBySeconds;
             }
 
-            public static long GetMillisecondsSinceJasmineIdEpochFromDateTime(DateTime dateTime)
+            public static long GetMillisecondsSinceCatkinIdEpochFromDateTime(DateTime dateTime)
             {
-                return GetMillisecondsSinceEpochFromDateTime(dateTime) - (JasmineIdEpochOffsetBySeconds * 1000);
+                return GetMillisecondsSinceEpochFromDateTime(dateTime) - (CatkinIdEpochOffsetBySeconds * 1000);
             }
         }
     }

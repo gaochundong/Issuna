@@ -35,9 +35,9 @@ namespace Issuna.Core.Tests
         {
             var peonyId = new PeonyId(1, 8679772108, 5, 256, 1023);
             Assert.Equal(1, peonyId.Reserved);
+            Assert.Equal(8679772108, peonyId.Timestamp);
             Assert.Equal(5, peonyId.Region);
             Assert.Equal(256, peonyId.Machine);
-            Assert.Equal(8679772108, peonyId.Timestamp);
             Assert.Equal(1023, peonyId.Sequence);
             Assert.Equal(PeonyId.PeonyIdTimer.PeonyIdEpoch.AddMilliseconds(8679772108), peonyId.CreationTime);
             Assert.Equal("-9150560831105924097", peonyId.ToString());
