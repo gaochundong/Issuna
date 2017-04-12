@@ -8,7 +8,7 @@ namespace Issuna.Core
     public class SnowflakeId
     {
         public static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-        public const long TwitterEpoch = 1288834974657L;
+        public const long TwitterEpoch = 1288834974657L; // Thu, 04 Nov 2010 01:42:54 GMT
 
         public const int TimestampBits = 41;
         public const int DataCenterIdBits = 5;
