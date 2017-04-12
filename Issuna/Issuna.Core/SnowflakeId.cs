@@ -78,12 +78,7 @@ namespace Issuna.Core
 
                 _lastTimestamp = timestamp;
 
-                var id = ((timestamp - TwitterEpoch) << TimestampShift) |
-                         (DataCenterId << DataCenterIdShift) |
-                         (WorkerId << WorkerIdShift) |
-                         (_sequence);
-
-                return id;
+                return Pack(timestamp, DataCenterId, WorkerId, _sequence);
             }
         }
 
@@ -100,6 +95,15 @@ namespace Issuna.Core
         private long NextTimestamp()
         {
             return (long)((DateTime.UtcNow - UnixEpoch).Ticks / 10000);
+        }
+
+        public static long Pack(long timestamp, long dataCenterId, long workerId, long sequence)
+        {
+            var snowflake = ((timestamp - TwitterEpoch) << TimestampShift)
+                     | (dataCenterId << DataCenterIdShift)
+                     | (workerId << WorkerIdShift)
+                     | (sequence);
+            return snowflake;
         }
 
         public static void Unpack(long snowflake, out long timestamp, out long dataCenterId, out long workerId, out long sequence)
